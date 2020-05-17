@@ -19,6 +19,5 @@ Route::get('/', function () {
 
 Auth::routes();
 
-Route::get('/medicos', 'GoogleSheetsController@getSheetsData');
-Route::get('/turnosmedicosia', 'GoogleSheetsController@getLoginData');
+Route::get('/sheet/{sheetId}', 'GoogleSheetsController@getSpreadSheet');
 Route::get('/home', 'HomeController@index')->name('home');

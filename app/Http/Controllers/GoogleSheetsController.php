@@ -7,21 +7,23 @@ use Sheets;
 
 class GoogleSheetsController extends Controller
 {
-    public function getSheetsData()
+    private $spreadSheetId = '1xaORRQBAxi4Mly_9yccQvgc2KBVpdMWAJTRBkcXRrMI';
+
+    public function getSheetsData($sheetId)
     {
-        $spreadSheetId = '1xaORRQBAxi4Mly_9yccQvgc2KBVpdMWAJTRBkcXRrMI';
-        $sheetId = 'Medicos';
-        $sheets = Sheets::spreadsheet($spreadSheetId)
+        $sheets = Sheets::spreadsheet($this->spreadSheetId)
           ->sheet($sheetId)
           ->get();
 
         $header = $sheets->pull(0);
 
+        $rows = Sheets::collection($header, $sheets);
 
-        $medicos = Sheets::collection($header, $sheets);
+        return $rows->reverse()->take(10);
+    }
 
-        $medicos = $medicos->reverse()->take(10);
-
-        return $medicos;
+    public function getSpreadSheet($sheetId)
+    {
+        return $this->getSheetsData($sheetId);
     }
 }
