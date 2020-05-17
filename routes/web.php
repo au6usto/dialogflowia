@@ -17,8 +17,8 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/medicos', 'GoogleSheetsController@getSheetsData');
-
 Auth::routes();
 
+Route::get('/medicos', 'GoogleSheetsController@getSheetsData');
+Route::get('/turnosmedicosia', 'GoogleSheetsController@getLoginData');
 Route::get('/home', 'HomeController@index')->name('home');
