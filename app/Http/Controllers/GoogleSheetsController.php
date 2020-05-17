@@ -10,7 +10,7 @@ class GoogleSheetsController extends Controller
     public function getSheetsData()
     {
         $spreadSheetId = '1xaORRQBAxi4Mly_9yccQvgc2KBVpdMWAJTRBkcXRrMI';
-        $sheetId = 'Sheet 1';
+        $sheetId = 'Medicos';
         $sheets = Sheets::spreadsheet($spreadSheetId)
           ->sheet($sheetId)
           ->get();
