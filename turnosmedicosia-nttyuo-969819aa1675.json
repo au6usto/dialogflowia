@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "turnosmedicosia-nttyuo",
+  "private_key_id": "969819aa1675848bb7c181dab3fb9611c0263339",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDCMj5cmVDp62uR\nsYHd18RLWAUwOIfHAmB0sF33BgIelYl8EMiVKKUxP/Qtjni1NETDOmvb+v2pchOH\n0uk4CaLL76lMkzlpwEAFT1T7vYIm5VTFui1XY3VDIzGMC07kbexAZBrpER+yqSA1\nOugjDauepiAmPJzo1a7w2QpOMkcOkrfqghhEag9s6ciTXQe8ccoOl1tWxK/v9dxL\nPCy321Eo2Jev93f8zj3ruWOBjJI8CkbfnpvmX0T8O+Lt8oasu1c3p1YBjQO4JxO8\n/z0RRjYQb5nWp7V4Gko6B/klVZ9I49b4MNuTQkakymjLBhp0KvUrlqV8ohbfNjuI\npHyOPSXrAgMBAAECggEATktAfkfn6e+a9mn5IG5p+zB5IwhfoZoxNkqXD81x1E/Y\n1tbTb+Oruk/9C9L5kqEIqidnLhEi7QqLmkKr+YZVBuDQwolG5/51MU7bRgWRMEpc\no71co3N7Zv6M7tfuTkWNLybM/LOFMpxiWmOuDNfpnfR/WLsuTec8+Wif8Yfuww4r\nGYSHH+w6D0HGhUTLePriS59JtJDffiZShZrO5iReMnBPNc6FwN2Dl3RdHNDq5sRB\nEe64nSo5En+REhA45tXH/+9iuogDwX1Hb/qoitnh5e6qDceq2gVZK1FufgLcoPzj\nhTHi5+fiqrJAdboIfc7IXrD63cwH5XgaDhmM33OyKQKBgQDr8nLuHCAVc4ylSSac\n7J+VYu2MlAuZ0HeDP2dZjBYLr8EF3rmwriny+s0X7NJ2rR8FjBW0KZLKIjVOcyJp\n8IpTEfNNdMhYUEuqqwoG0kg2ZvlHwvpCnmX8ZE0q6NQTz5CmbTU8getzokdJuIsL\nxlTQoC3SXDvuyC4DIcYcD1oT0wKBgQDSs2nZgk7ofuyf/2rhGAIdH0DxjKPMvFOX\nAtZHNVSs8gu/eCzy2+pGVF+NL7PWQgrYyIXuKsRoKjLNr3uX1aHbfcjRpkuvDuyO\nKS+Es0gcLXmiYKDDzDrvwYDoX0j7EycIgiIW49pI66+2UC2w3CVYpBpEoIw8eF1s\nMN4bHWEOiQKBgFhbPIrKYYFm+f5TfHA7dC9fEpIYRpfdJ0QxFCTGfuL1eBUYqPTu\n46qoHPGer9ndTsanBOGox92GHew41WRSvZoKGNCisPvRZeSNlH2ldYFZ4nPrIgic\nhJiVfwhYlEKu8f5A2zTDekadOJD02K0aIlzV/xLNk2wB7qkhlqyfWx4dAoGBALaG\nT+rp9Ht6AHg2JptqVeJuga7+m6MvfeYywfeb3oeXgs/SRnX4RoG4c7H2If845PaY\n91Sz3cMy0yHVo+aLXZSr6XycZ7H15rzcNtrpCE3IozckKACV+nRaF9a1PJ6sH8NC\nIE/eAOnsqiHwYTR18TBRsKPExNdZmeywhKfOkpapAoGBANJ7oZ3Kd2n6WQ/Ku7fj\nX6yS6vMlbLFa0xZfex4kogOz15nYLYP02hoPLJdh28Zh4vlC2UEAZYxj0kRDYZfC\nQrgy8+7xKiwwV2W8PbuQeLRdj7EH4tJtUajZPbXJsBaJ74X7GZiwEoFzF+CfIuM8\n3z7/aV1faK3gtsE88oKcRybz\n-----END PRIVATE KEY-----\n",
+  "client_email": "turnosmedicosia-nttyuo@appspot.gserviceaccount.com",
+  "client_id": "102949696720174958635",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/turnosmedicosia-nttyuo%40appspot.gserviceaccount.com"
+}
