@@ -11,29 +11,72 @@ process.env.DEBUG = 'dialogflow:debug'; // enables lib debugging statements
  
 exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, response) => {
   const agent = new WebhookClient({ request, response });
-  console.log('Dialogflow Request headers: ' + JSON.stringify(request.headers));
-  console.log('Dialogflow Request body: ' + JSON.stringify(request.body));
+  // console.log('Dialogflow Request headers: ' + JSON.stringify(request.headers));
+  // console.log('Dialogflow Request body: ' + JSON.stringify(request.body));
  
   function getSpreadSheetData(url) {
     return axios.get(url);
   }
+
+  function postSpreadSheetData(url, data) {
+    return axios.post(url, data);
+  }
   
-  function welcome(agent) {
-    agent.add(`Welcome to my agent!`);
-    let urlPacientes = 'https://sheetdb.io/api/v1/wm3f3g4x5i26u';
-    return getSpreadSheetData(urlPacientes).then( res => {
-    	console.log(res.data);
+  function getListadoEspecialidades(agent) {
+    return getSpreadSheetData('http://ia2020.ddns.net/sheet/Especialidades').then( res => {
+      	res.data.map(especialidad => {
+            agent.add(especialidad.IdEspecialidad + ' - ' + especialidad.Especialidad);
+        });
+    });
+  }
+
+  function getListadoMedicos(agent) {
+    return getSpreadSheetData('http://ia2020.ddns.net/sheet/Medicos').then( res => {
+      	res.data.map(medico => {
+            agent.add(medico.IdMedico + ' - ' + medico.Apellido + ', ' + medico.Nombre + ' - ' + medico.Atencion);
+        });
+    });
+  }
+
+  function getListadoTurnosMedicoSede(agent) {
+    return getSpreadSheetData('http://ia2020.ddns.net/Turnos/Medicos/' + agent.parameters.IdMedico + '/Sede/' + agent.parameters.IdSede).then( res => {
+      	res.data.map(turno => {
+            agent.add(turno.IdTurno + ' - ' + turno.Fecha + ', ' + turno.HoraInicio + ' - ' + turno.HoraFin);
+        });
+    });
+  }
+
+  function isPacienteExistente(agent) {
+    return getSpreadSheetData('http://ia2020.ddns.net/Paciente/' + agent.parameters.dni).then( res => {
       	res.data.map(paciente => {
-          if (paciente.apellido !== '') {
-            agent.add(paciente.apellido);
-          }
+            agent.add(paciente.IdPaciente + ' - ' + paciente.Apellido + ', ' + paciente.Nombre + ' - ' + paciente.NroAfiliado);
+        });
+    });
+  }
+
+  function savePaciente(agent) {
+    let data = {
+      IdPaciente: agent.parameters.IdPaciente,
+      IdMedico: agent.parameters.IdMedico,
+      IdSede: agent.parameters.IdSede,
+      IdTurno: agent.parameters.IdTurno,
+    };
+    
+    return postSpreadSheetData('http://ia2020.ddns.net/Paciente/').then( res => {
+      if (res.data.success) {
+        agent.add(`El turno fue asignado correctamente`);    
+      } else {
+        agent.add(`No se pudo asignar el turno, intente nuevamente.`);
+      }
+      	res.data.map(paciente => {
+            agent.add(paciente.IdPaciente + ' - ' + paciente.Apellido + ', ' + paciente.Nombre + ' - ' + paciente.NroAfiliado);
         });
     });
   }
  
   function fallback(agent) {
-    agent.add(`I didn't understand`);
-    agent.add(`I'm sorry, can you try again?`);
+    agent.add(`No te entendí`);
+    agent.add(`Disculpa, puedes intentar de nuevo?`);
   }
 
   // // Uncomment and edit to make your own intent handler
@@ -67,7 +110,11 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
 
   // Run the proper function handler based on the matched Dialogflow intent name
   let intentMap = new Map();
-  intentMap.set('Default Welcome Intent', welcome);
+  intentMap.set('UsuarioIngresaEspecialidad - ListadoCompleto', getListadoEspecialidades);
+  intentMap.set('UsuarioIngresaEspecialidad - FiltraProfesional', getListadoMedicos);
+  intentMap.set('UsuarioIngresaEspecialidad - FiltraFecha', getListadoTurnosMedicoSede);
+  intentMap.set('UsuarioEsPaciente - Si/No se', isPacienteExistente);
+  intentMap.set('UsuarioPideTurno', savePaciente);
   intentMap.set('Default Fallback Intent', fallback);
   // intentMap.set('your intent name here', yourFunctionHandler);
   // intentMap.set('your intent name here', googleAssistantHandler);
