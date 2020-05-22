@@ -45,13 +45,69 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
   }
 
   function getListadoTurnosDeMedico(agent) {
-    return getSpreadSheetData('http://ia2020.ddns.net/Turnos/Medico/' + agent.parameters.IdMedico).then( res => {
+    return getSpreadSheetData('http://ia2020.ddns.net/Medico/Turnos/' + agent.parameters.IdMedico).then( res => {
       if (typeof res.data.Apellido !== 'undefined') {
         agent.add('Los turnos disponibles para el médico elegido son: ');
         res.data.map(turno => {
-          agent.add(turno.IdTurno + ' - ' + turno.Fecha + ', ' + turno.HoraInicio);
+          agent.add(turno.IdTurno + ' - ' + turno.Fecha + ', ' + turno.HoraInicio + ' - ' + turno.Apellido + ', ' + turno.Nombre);
         });
         agent.setContext({ name: 'UsuarioEligeFecha-followup', parameters: {}});
+      } else {
+        agent.add('No se encontró ningún turno disponible para el médico elegido.');
+      }
+    });
+  }
+
+  function getListadoMedicosPorApellido(agent) {
+    return getSpreadSheetData('http://ia2020.ddns.net/Medicos/Apellido/' + agent.parameters.Apellido).then( res => {
+      if (typeof res.data.Apellido !== 'undefined') {
+        agent.add('Los turnos disponibles para el Apellido elegido son: ');
+        res.data.map(turno => {
+          agent.add(turno.IdTurno + ' - ' + turno.Fecha + ', ' + turno.HoraInicio + ' - ' + turno.Apellido + ', ' + turno.Nombre  + ', ' + turno.Especialidad);
+        });
+        agent.setContext({ name: 'IndicaProfesional-followup', parameters: {}});
+      } else {
+        agent.add('No se encontró ningún turno disponible para el médico elegido.');
+      }
+    });
+  }
+
+  function getListadoMedicosObraSocial(agent) {
+    return getSpreadSheetData('http://ia2020.ddns.net/Medicos/ObraSocial/' + agent.parameters.ObraSocial).then( res => {
+      if (typeof res.data.Apellido !== 'undefined') {
+        agent.add('Los medicos disponibles para la Obra Social elegida son: ');
+        res.data.map(medico => {
+          agent.add(medico.IdMedico + ' - ' + medico.Apellido + ', ' + medico.Nombre  + ' - ' + medico.Especialidad);
+        });
+        agent.setContext({ name: 'IndicaProfesional-followup', parameters: {}});
+      } else {
+        agent.add('No se encontró ningún Médico disponible para la Obra Social elegida.');
+      }
+    });
+  }
+
+  function getListadoMedicosFecha(agent) {
+    return getSpreadSheetData('http://ia2020.ddns.net/Medicos/Fecha/' + agent.parameters.Fecha).then( res => {
+      if (typeof res.data.Apellido !== 'undefined') {
+        agent.add('Los turnos disponibles para la Fecha elegida son: ');
+        res.data.map(turno => {
+          agent.add(turno.IdTurno + ' - ' + turno.Fecha + ', ' + turno.HoraInicio + ' - ' + turno.Apellido + ', ' + turno.Nombre  + ', ' + turno.Especialidad);
+        });
+        agent.setContext({ name: 'IndicaProfesional-followup', parameters: {}});
+      } else {
+        agent.add('No se encontró ningún turno disponible para el médico elegido.');
+      }
+    });
+  }
+
+  function getListadoFechasMedico(agent) {
+    return getSpreadSheetData('http://ia2020.ddns.net/Turnos/Fecha/' + agent.parameters.Fecha + '/Medico/' + agent.parameters.IdMedico).then( res => {
+      if (typeof res.data.Apellido !== 'undefined') {
+        agent.add('Los turnos disponibles para la Fecha elegida son: ');
+        res.data.map(turno => {
+          agent.add(turno.IdTurno + ' - ' + turno.Fecha + ', ' + turno.HoraInicio + ' - ' + turno.Apellido + ', ' + turno.Nombre  + ', ' + turno.Especialidad);
+        });
+        agent.setContext({ name: 'IndicaProfesional-followup', parameters: {}});
       } else {
         agent.add('No se encontró ningún turno disponible para el médico elegido.');
       }
@@ -130,8 +186,10 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
   // Run the proper function handler based on the matched Dialogflow intent name
   let intentMap = new Map();
   intentMap.set('UsuarioIngresaEspecialidad - ListadoCompleto', getListadoMedicosDeEspecialidad);
-  intentMap.set('UsuarioIngresaEspecialidad - FiltraProfesional', getListadoMedicos);
-  intentMap.set('UsuarioIngresaEspecialidad - FiltraFecha', getListadoTurnosDeMedico);
+  intentMap.set('UsuarioIngresaEspecialidad - FiltraProfesional', getListadoMedicosPorApellido);
+  intentMap.set('UsuarioIngresaEspecialidad - FiltraFecha', getListadoMedicosFecha);
+  intentMap.set('UsuarioIngresaEspecialidad - FiltraObraSocial', getListadoMedicosObraSocial);
+  intentMap.set('UsuarioEligeFecha', getListadoTurnosDeMedico);
   intentMap.set('UsuarioEsPaciente - Si/No se - EspecificaDNI', isPacienteExistente);
   intentMap.set('UsuarioPideTurno', savePaciente);
   intentMap.set('Default Fallback Intent', fallback);
