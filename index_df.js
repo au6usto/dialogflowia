@@ -25,9 +25,9 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
   function getListadoMedicosDeEspecialidad(agent) {
     return getSpreadSheetData('http://ia2020.ddns.net/MedicosEspecialidad/' + agent.parameters.especialidad).then( res => {
       if (typeof res.data.Apellido !== 'undefined') {
-        agent.add('Los médicos disponibles para la especialidad' + agent.parameters.especialidad + ' son:');
+        agent.add('Los médicos disponibles para la especialidad ' + agent.parameters.especialidad + ' son:');
         res.data.map(medico => {
-          agent.add(medico.IdMedico + ' - ' + medico.Apellido + ', ' + medico.Nombre + ' - Obras Sociales: ' + medico.ObrasSociales + ' - Precio Consulta: ' + medico.PrecioConsulta +  + ' - Horario: ' + res.data.Atencion);
+          agent.add(medico.IdMedico + ' - ' + medico.Apellido + ', ' + medico.Nombre + ' - Obras Sociales: ' + medico.ObrasSociales + ' - Precio Consulta: ' + medico.PrecioConsulta + ' - Horario: ' + res.data.Atencion);
         });
         agent.setContext({ name: 'UsuarioIngresaEspecialidad-FiltraProfesional-followup', parameters: {}});
       } else {
@@ -103,13 +103,13 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
   function getListadoFechasMedico(agent) {
     return getSpreadSheetData('http://ia2020.ddns.net/Turnos/Fecha/' + agent.parameters.Fecha + '/Medico/' + agent.parameters.IdMedico).then( res => {
       if (typeof res.data.Apellido !== 'undefined') {
-        agent.add('Los turnos disponibles para la Fecha elegida son: ');
+        agent.add('Los turnos disponibles para la Fecha y el Médico elegido son: ');
         res.data.map(turno => {
-          agent.add(turno.IdTurno + ' - ' + turno.Fecha + ', ' + turno.HoraInicio + ' - ' + turno.Apellido + ', ' + turno.Nombre  + ', ' + turno.Especialidad);
+          agent.add(turno.IdTurno + ' - ' + turno.Fecha + ', ' + turno.HoraInicio + ' - ' + turno.Apellido + ', ' + turno.Nombre  + ', ' + turno.Especialidad  + ', ' + turno.PrecioConsulta);
         });
         agent.setContext({ name: 'IndicaProfesional-followup', parameters: {}});
       } else {
-        agent.add('No se encontró ningún turno disponible para el médico elegido.');
+        agent.add('No se encontró ningún turno disponible para la Fecha y Médico elegidos.');
       }
     });
   }
@@ -185,9 +185,10 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
 
   // Run the proper function handler based on the matched Dialogflow intent name
   let intentMap = new Map();
+  intentMap.set('projects/turnosmedicosia-nttyuo/agent/intents/04898027-216f-44f3-9a87-1ffe385ef57c', getListadoMedicosDeEspecialidad);
   intentMap.set('UsuarioIngresaEspecialidad - ListadoCompleto', getListadoMedicosDeEspecialidad);
   intentMap.set('UsuarioIngresaEspecialidad - FiltraProfesional', getListadoMedicosPorApellido);
-  intentMap.set('UsuarioIngresaEspecialidad - FiltraFecha', getListadoMedicosFecha);
+  intentMap.set('UsuarioIngresaEspecialidad - FiltraFecha', getListadoFechasMedico);
   intentMap.set('UsuarioIngresaEspecialidad - FiltraObraSocial', getListadoMedicosObraSocial);
   intentMap.set('UsuarioEligeFecha', getListadoTurnosDeMedico);
   intentMap.set('UsuarioEsPaciente - Si/No se - EspecificaDNI', isPacienteExistente);

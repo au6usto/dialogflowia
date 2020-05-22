@@ -36,7 +36,15 @@ class GoogleSheetsController extends Controller
     public function getMedicosEspecialidad($especialidad)
     {
         $sheetId = 'Medicos';
-        return $this->getSheetsData($sheetId)->where('Especialidad', $especialidad);
+        $medicos = $this->getSheetsData($sheetId);
+        $medicosConEspecialidad = [];
+        foreach ($medicos as $key => $medico) {
+            if (stripos(preg_replace('/\s+/', '', $medico['Especialidad']), preg_replace('/\s+/', '', $especialidad)) !== false) {
+                array_push($medicosConEspecialidad, $key);
+            }
+        }
+
+        return $medicos->only($medicosConEspecialidad);
     }
 
     public function getTurnosMedico($idMedico)
@@ -79,7 +87,6 @@ class GoogleSheetsController extends Controller
         ->where('Fecha', \Carbon\Carbon::parse($fecha)->format('Y-m-d'))
         ->where('IdMedico', $idMedico)
         ->where('Estado', 'Disponible');
-        // dd(\Carbon\Carbon::parse($fecha)->format('Y-m-d'));
         foreach ($turnos as $key => $turno) {
             $turno['Apellido'] = $medicos->firstWhere('IdMedico', $turno['IdMedico'])['Apellido'];
             $turno['Nombre'] = $medicos->firstWhere('IdMedico', $turno['IdMedico'])['Nombre'];
@@ -106,7 +113,7 @@ class GoogleSheetsController extends Controller
         $arrayIdsMedicos = [];
         foreach ($medicos as $medico) {
             foreach ($medico['ObrasSociales'] as $os) {
-                if (stripos(strtoupper(preg_replace('/\s+/', '', $os)), strtoupper(preg_replace('/\s+/', '', $obraSocial))) !== false) {
+                if (stripos(preg_replace('/\s+/', '', $os), preg_replace('/\s+/', '', $obraSocial)) !== false) {
                     array_push($arrayIdsMedicos, $medico['IdMedico']);
                 }
             }
