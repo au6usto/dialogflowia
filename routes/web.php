@@ -21,4 +21,7 @@ Auth::routes();
 
 Route::get('/sheet/{sheetId}', 'GoogleSheetsController@getSpreadSheet');
 Route::get('/Paciente/{dni}', 'GoogleSheetsController@getPaciente');
+Route::post('/Paciente', 'GoogleSheetsController@storePaciente');
+Route::get('/MedicosEspecialidad/{especialidad}', 'GoogleSheetsController@getMedicosEspecialidad');
+Route::get('/Turnos/Medico/{idMedico}', 'GoogleSheetsController@getTurnosMedico');
 Route::get('/home', 'HomeController@index')->name('home');

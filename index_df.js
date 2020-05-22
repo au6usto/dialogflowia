@@ -22,11 +22,17 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     return axios.post(url, data);
   }
   
-  function getListadoEspecialidades(agent) {
-    return getSpreadSheetData('http://ia2020.ddns.net/sheet/Especialidades').then( res => {
-      	res.data.map(especialidad => {
-            agent.add(especialidad.IdEspecialidad + ' - ' + especialidad.Especialidad);
+  function getListadoMedicosDeEspecialidad(agent) {
+    return getSpreadSheetData('http://ia2020.ddns.net/MedicosEspecialidad/' + agent.parameters.especialidad).then( res => {
+      if (typeof res.data.Apellido !== 'undefined') {
+        agent.add('Los médicos disponibles para la especialidad' + agent.parameters.especialidad + ' son:');
+        res.data.map(medico => {
+          agent.add(medico.IdMedico + ' - ' + medico.Apellido + ', ' + medico.Nombre + ' - Obras Sociales: ' + medico.ObrasSociales + ' - Precio Consulta: ' + medico.PrecioConsulta +  + ' - Horario: ' + res.data.Atencion);
         });
+        agent.setContext({ name: 'UsuarioIngresaEspecialidad-FiltraProfesional-followup', parameters: {}});
+      } else {
+        agent.add('No se encontró ningún médico disponible para la especialidad elegida.');
+      }
     });
   }
 
@@ -38,42 +44,55 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     });
   }
 
-  function getListadoTurnosMedicoSede(agent) {
-    return getSpreadSheetData('http://ia2020.ddns.net/Turnos/Medicos/' + agent.parameters.IdMedico + '/Sede/' + agent.parameters.IdSede).then( res => {
-      	res.data.map(turno => {
-            agent.add(turno.IdTurno + ' - ' + turno.Fecha + ', ' + turno.HoraInicio + ' - ' + turno.HoraFin);
+  function getListadoTurnosDeMedico(agent) {
+    return getSpreadSheetData('http://ia2020.ddns.net/Turnos/Medico/' + agent.parameters.IdMedico).then( res => {
+      if (typeof res.data.Apellido !== 'undefined') {
+        agent.add('Los turnos disponibles para el médico elegido son: ');
+        res.data.map(turno => {
+          agent.add(turno.IdTurno + ' - ' + turno.Fecha + ', ' + turno.HoraInicio);
         });
+        agent.setContext({ name: 'UsuarioEligeFecha-followup', parameters: {}});
+      } else {
+        agent.add('No se encontró ningún turno disponible para el médico elegido.');
+      }
     });
   }
 
   function isPacienteExistente(agent) {
     return getSpreadSheetData('http://ia2020.ddns.net/Paciente/' + agent.parameters.number).then( res => {
-      	res.data.map(paciente => {
-            agent.add(paciente.IdPaciente + ' - ' + paciente.Apellido + ', ' + paciente.Nombre + ' - ' + paciente.NroAfiliado);
-        });
+      if (typeof res.data.Apellido !== 'undefined') {
+        agent.add('¡Muy bien! Sus datos son: ');
+        agent.add(res.data.Apellido + ', ' + res.data.Nombre + ' - ' + res.data.NroAfiliado);
+        agent.add('Su turno fue registrado con éxito');
+        //agent.setContext({ name: 'UsuarioRegistro-followup', parameters: { city: 'Rome' }});
+      } else {
+        agent.setContext({ name: 'UsuarioRegistro-followup', parameters: { }});
+      }
     });
   }
 
   function savePaciente(agent) {
     let data = {
-      IdPaciente: agent.parameters.IdPaciente,
-      IdMedico: agent.parameters.IdMedico,
-      IdSede: agent.parameters.IdSede,
-      IdTurno: agent.parameters.IdTurno,
+      Dni: agent.parameters.Dni,
+      Apellido: agent.parameters.Apellido,
+      Nombre: agent.parameters.Nombre,
+      Telefono: agent.parameters.Telefono,
+      Correo: agent.parameters.Correo,
+      ObraSocial: agent.parameters.ObraSocial,
+      NroAfiliado: agent.parameters.NroAfiliado,
+      IdTurno: agent.parameters.IdTurno
     };
     
-    return postSpreadSheetData('http://ia2020.ddns.net/Paciente/').then( res => {
+    return postSpreadSheetData('http://ia2020.ddns.net/Paciente/', data).then( res => {
       if (res.data.success) {
-        agent.add(`El turno fue asignado correctamente`);    
+        agent.add(`El paciente fue creado y su turno fue asignado correctamente`);    
       } else {
         agent.add(`No se pudo asignar el turno, intente nuevamente.`);
       }
-      	res.data.map(paciente => {
-            agent.add(paciente.IdPaciente + ' - ' + paciente.Apellido + ', ' + paciente.Nombre + ' - ' + paciente.NroAfiliado);
-        });
     });
   }
- 
+
+
   function fallback(agent) {
     agent.add(`No te entendí`);
     agent.add(`Disculpa, puedes intentar de nuevo?`);
@@ -110,10 +129,10 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
 
   // Run the proper function handler based on the matched Dialogflow intent name
   let intentMap = new Map();
-  intentMap.set('UsuarioEsPaciente - Si/No se - EspecificaDNI', isPacienteExistente);
-  intentMap.set('UsuarioIngresaEspecialidad - ListadoCompleto', getListadoEspecialidades);
+  intentMap.set('UsuarioIngresaEspecialidad - ListadoCompleto', getListadoMedicosDeEspecialidad);
   intentMap.set('UsuarioIngresaEspecialidad - FiltraProfesional', getListadoMedicos);
-  intentMap.set('UsuarioIngresaEspecialidad - FiltraFecha', getListadoTurnosMedicoSede);
+  intentMap.set('UsuarioIngresaEspecialidad - FiltraFecha', getListadoTurnosDeMedico);
+  intentMap.set('UsuarioEsPaciente - Si/No se - EspecificaDNI', isPacienteExistente);
   intentMap.set('UsuarioPideTurno', savePaciente);
   intentMap.set('Default Fallback Intent', fallback);
   // intentMap.set('your intent name here', yourFunctionHandler);
