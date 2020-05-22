@@ -36,10 +36,11 @@ class GoogleSheetsController extends Controller
 
     public function getMedicosEspecialidad($especialidad)
     {
-        if (Cache::has('Medicos-Especialidad')) {
-            return Cache::get('Medicos-Especialidad');
+        if (Cache::has('MedicosDeEspecialidad')) {
+            return Cache::get('MedicosDeEspecialidad');
         }
 
+        \Log::info($especialidad);
         $sheetId = 'Medicos';
         $medicos = $this->getSheetsData($sheetId);
         $medicosConEspecialidad = [];
@@ -50,8 +51,8 @@ class GoogleSheetsController extends Controller
         }
 
         $medicosFiltrados = $medicos->only($medicosConEspecialidad);
-        Cache::add('Medicos-Especialidad', $medicosFiltrados, 3600);
-        return $medicosFiltrados;
+        Cache::add('MedicosDeEspecialidad', $medicosFiltrados->toArray(), 3600);
+        return $medicosFiltrados->toArray();
     }
 
     public function getTurnosMedico($idMedico)
