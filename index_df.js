@@ -24,11 +24,11 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
   
   function getListadoMedicosDeEspecialidad(agent) {
     return getSpreadSheetData('http://ia2020.ddns.net/MedicosEspecialidad/' + agent.parameters.especialidad).then( res => {
-      console.log(res.data);
-      // if (typeof res.data.Apellido !== 'undefined') {
+      console.log(res.data.data);
+      // if (typeof res.data.data.Apellido !== 'undefined') {
         agent.add('Los médicos disponibles para la especialidad ' + agent.parameters.especialidad + ' son:');
-        res.data.map(medico => {
-          agent.add(medico.IdMedico + ' - ' + medico.Apellido + ', ' + medico.Nombre + ' - Obras Sociales: ' + medico.ObrasSociales + ' - Precio Consulta: ' + medico.PrecioConsulta + ' - Horario: ' + res.data.Atencion);
+        res.data.data.map(medico => {
+          agent.add(medico.IdMedico + ' - ' + medico.Apellido + ', ' + medico.Nombre + ' - Obras Sociales: ' + medico.ObrasSociales + ' - Precio Consulta: ' + medico.PrecioConsulta + ' - Horario: ' + medico.Atencion);
         });
         agent.setContext({ name: 'UsuarioIngresaEspecialidad-FiltraProfesional-followup', parameters: {}});
       // } else {

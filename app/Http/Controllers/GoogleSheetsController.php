@@ -52,7 +52,8 @@ class GoogleSheetsController extends Controller
 
         $medicosFiltrados = $medicos->only($medicosConEspecialidad);
         Cache::add('MedicosDeEspecialidad', $medicosFiltrados->toArray(), 3600);
-        return $medicosFiltrados->toArray();
+        return $this->sendResponse($medicosFiltrados->values(), 'Datos de Cargo');
+        return $this->sendError('El candidato no posee Función');
     }
 
     public function getTurnosMedico($idMedico)
@@ -174,7 +175,7 @@ class GoogleSheetsController extends Controller
     public function storePaciente(Request $request)
     {
         $datos = $request->all();
-        
+
         //Registro paciente
         $pacientes = $this->getSheetsData('Pacientes');
         $paciente = $pacientes->firstWhere('DNI', $datos['dni']);
