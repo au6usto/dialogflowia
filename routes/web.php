@@ -20,4 +20,5 @@ Route::get('/', function () {
 Auth::routes();
 
 Route::get('/sheet/{sheetId}', 'GoogleSheetsController@getSpreadSheet');
+Route::get('/Paciente/{dni}', 'GoogleSheetsController@getPaciente');
 Route::get('/home', 'HomeController@index')->name('home');

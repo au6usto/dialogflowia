@@ -47,7 +47,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
   }
 
   function isPacienteExistente(agent) {
-    return getSpreadSheetData('http://ia2020.ddns.net/Paciente/' + agent.parameters.dni).then( res => {
+    return getSpreadSheetData('http://ia2020.ddns.net/Paciente/' + agent.parameters.number).then( res => {
       	res.data.map(paciente => {
             agent.add(paciente.IdPaciente + ' - ' + paciente.Apellido + ', ' + paciente.Nombre + ' - ' + paciente.NroAfiliado);
         });
@@ -110,10 +110,10 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
 
   // Run the proper function handler based on the matched Dialogflow intent name
   let intentMap = new Map();
+  intentMap.set('UsuarioEsPaciente - Si/No se - EspecificaDNI', isPacienteExistente);
   intentMap.set('UsuarioIngresaEspecialidad - ListadoCompleto', getListadoEspecialidades);
   intentMap.set('UsuarioIngresaEspecialidad - FiltraProfesional', getListadoMedicos);
   intentMap.set('UsuarioIngresaEspecialidad - FiltraFecha', getListadoTurnosMedicoSede);
-  intentMap.set('UsuarioEsPaciente - Si/No se', isPacienteExistente);
   intentMap.set('UsuarioPideTurno', savePaciente);
   intentMap.set('Default Fallback Intent', fallback);
   // intentMap.set('your intent name here', yourFunctionHandler);

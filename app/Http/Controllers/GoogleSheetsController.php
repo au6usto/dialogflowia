@@ -26,4 +26,36 @@ class GoogleSheetsController extends Controller
     {
         return $this->getSheetsData($sheetId);
     }
+
+    public function getPaciente($dni)
+    {
+        $sheetId = 'Pacientes';
+        $pacientes = collect($this->getSheetsData($sheetId));
+        return $pacientes->where('Dni', $dni)->first();
+    }
+
+    public function appendDataSheet(Request $request)
+    {
+        $sheetId = 'TurnosMedicosAsignados';
+
+        $datos = $request->all();
+        $paciente = [
+          'IdTurno' = 2, 
+          'DNI' => $datos['dni'],
+          'Apellido' => $datos['apellido'],
+          'Nombre' => $datos['name'],
+          'Obra Social' => $datos['obraSocial'],
+          'Medico' => $datos['medico'],
+          'turno' => $datos['turno'],
+          'dia' => $datos['dia'],
+          'hora' => $datos['hora'],
+          'Sala' => $datos['sala'],
+          'Consultorio' => $datos['consultorio']
+
+       ];
+
+        Sheets::spreadsheet($this->spreadSheetId)
+              ->sheetById($sheetId)
+              ->append([$paciente]);
+    }
 }
