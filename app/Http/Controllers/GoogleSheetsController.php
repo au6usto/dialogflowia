@@ -36,9 +36,9 @@ class GoogleSheetsController extends Controller
 
     public function getMedicosEspecialidad($especialidad)
     {
-        // if (Cache::has('MedicosEspecialidad')) {
-        //     return Cache::get('MedicosEspecialidad');
-        // }
+        if (Cache::has('Medicos--Especialidad')) {
+            return Cache::get('Medicos--Especialidad');
+        }
 
         \Log::info($especialidad);
         $sheetId = 'Medicos';
@@ -51,7 +51,7 @@ class GoogleSheetsController extends Controller
         }
 
         $medicosFiltrados = $medicos->only($medicosConEspecialidad);
-        Cache::add('MedicosEspecialidad', $medicosFiltrados->toArray(), 3600);
+        Cache::add('Medicos--Especialidad', $medicosFiltrados->values(), 3600);
         return $this->sendResponse($medicosFiltrados->values(), 'Datos de Cargo');
         // return $this->sendError('El candidato no posee Función');
     }
