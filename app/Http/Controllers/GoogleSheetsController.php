@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Sheets;
+use Illuminate\Support\Facades\Cache;
 
 class GoogleSheetsController extends Controller
 {
@@ -35,6 +36,10 @@ class GoogleSheetsController extends Controller
 
     public function getMedicosEspecialidad($especialidad)
     {
+        if (Cache::has('Medicos-Especialidad')) {
+            return Cache::get('Medicos-Especialidad');
+        }
+
         $sheetId = 'Medicos';
         $medicos = $this->getSheetsData($sheetId);
         $medicosConEspecialidad = [];
@@ -44,7 +49,9 @@ class GoogleSheetsController extends Controller
             }
         }
 
-        return $medicos->only($medicosConEspecialidad);
+        $medicosFiltrados = $medicos->only($medicosConEspecialidad);
+        Cache::add('Medicos-Especialidad', $medicosFiltrados, 3600);
+        return $medicosFiltrados;
     }
 
     public function getTurnosMedico($idMedico)

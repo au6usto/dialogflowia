@@ -24,15 +24,16 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
   
   function getListadoMedicosDeEspecialidad(agent) {
     return getSpreadSheetData('http://ia2020.ddns.net/MedicosEspecialidad/' + agent.parameters.especialidad).then( res => {
-      if (typeof res.data.Apellido !== 'undefined') {
+      console.log(res.data);
+      // if (typeof res.data.Apellido !== 'undefined') {
         agent.add('Los médicos disponibles para la especialidad ' + agent.parameters.especialidad + ' son:');
         res.data.map(medico => {
           agent.add(medico.IdMedico + ' - ' + medico.Apellido + ', ' + medico.Nombre + ' - Obras Sociales: ' + medico.ObrasSociales + ' - Precio Consulta: ' + medico.PrecioConsulta + ' - Horario: ' + res.data.Atencion);
         });
         agent.setContext({ name: 'UsuarioIngresaEspecialidad-FiltraProfesional-followup', parameters: {}});
-      } else {
-        agent.add('No se encontró ningún médico disponible para la especialidad elegida.');
-      }
+      // } else {
+      //   agent.add('No se encontró ningún médico disponible para la especialidad elegida.');
+      // }
     });
   }
 
@@ -185,7 +186,6 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
 
   // Run the proper function handler based on the matched Dialogflow intent name
   let intentMap = new Map();
-  intentMap.set('projects/turnosmedicosia-nttyuo/agent/intents/04898027-216f-44f3-9a87-1ffe385ef57c', getListadoMedicosDeEspecialidad);
   intentMap.set('UsuarioIngresaEspecialidad - ListadoCompleto', getListadoMedicosDeEspecialidad);
   intentMap.set('UsuarioIngresaEspecialidad - FiltraProfesional', getListadoMedicosPorApellido);
   intentMap.set('UsuarioIngresaEspecialidad - FiltraFecha', getListadoFechasMedico);
