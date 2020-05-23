@@ -36,8 +36,8 @@ class GoogleSheetsController extends Controller
 
     public function getMedicosEspecialidad($especialidad)
     {
-        if (Cache::has('Medicos--Especialidad')) {
-            return $this->sendResponse(Cache::get('Medicos--Especialidad'), 'Medicos de Especialidad');
+        if (Cache::has('MedicosEspecialidad'. $especialidad)) {
+            return $this->sendResponse(Cache::get('MedicosEspecialidad'. $especialidad), 'Medicos de Especialidad');
         }
 
         $sheetId = 'Medicos';
@@ -50,7 +50,7 @@ class GoogleSheetsController extends Controller
         }
 
         $medicosFiltrados = $medicos->only($medicosConEspecialidad);
-        Cache::add('Medicos--Especialidad', $medicosFiltrados->values(), 3600);
+        Cache::add('MedicosEspecialidad'. $especialidad, $medicosFiltrados->values(), 3600);
         return $this->sendResponse($medicosFiltrados->values(), 'Medicos de Especialidad');
         // return $this->sendError('El candidato no posee Función');
     }
@@ -64,8 +64,14 @@ class GoogleSheetsController extends Controller
     public function getMedicosApellido($apellido)
     {
         $sheetId = 'Medicos';
-        $medicos = $this->getSheetsData($sheetId)->where('Apellido', $apellido);
-        return $medicos;
+        $medicos = $this->getSheetsData($sheetId);
+        $arrayIdsMedicos = [];
+        foreach ($medicos as $medico) {
+            if (stripos(preg_replace('/\s+/', '', $medicos['ApellidoNombre']), preg_replace('/\s+/', '', $apellido)) !== false) {
+                array_push($arrayIdsMedicos, $medico['IdMedico']);
+            }
+        }
+        return $medicos->only($arrayIdsMedicos);
     }
 
     public function getMedicosFecha($fecha)
@@ -96,8 +102,7 @@ class GoogleSheetsController extends Controller
         ->where('IdMedico', $idMedico)
         ->where('Estado', 'Disponible');
         foreach ($turnos as $key => $turno) {
-            $turno['Apellido'] = $medicos->firstWhere('IdMedico', $turno['IdMedico'])['Apellido'];
-            $turno['Nombre'] = $medicos->firstWhere('IdMedico', $turno['IdMedico'])['Nombre'];
+            $turno['ApellidoNombre'] = $medicos->firstWhere('IdMedico', $turno['IdMedico'])['ApellidoNombre'];
             $turno['Especialidad'] = $medicos->firstWhere('IdMedico', $turno['IdMedico'])['Especialidad'];
             $turno['PrecioConsulta'] = $medicos->firstWhere('IdMedico', $turno['IdMedico'])['PrecioConsulta'];
         }
@@ -161,8 +166,7 @@ class GoogleSheetsController extends Controller
 
         foreach ($turnos as $key => $turno) {
             if (in_array($turno['IdMedico'], $arrayIdsMedicos)) {
-                $turno['Apellido'] = $medicos->firstWhere('IdMedico', $turno['IdMedico'])['Apellido'];
-                $turno['Nombre'] = $medicos->firstWhere('IdMedico', $turno['IdMedico'])['Nombre'];
+                $turno['ApellidoNombre'] = $medicos->firstWhere('IdMedico', $turno['IdMedico'])['ApellidoNombre'];
                 $turno['Especialidad'] = $medicos->firstWhere('IdMedico', $turno['IdMedico'])['Especialidad'];
             } else {
                 array_push($turnosToRemove, $key);

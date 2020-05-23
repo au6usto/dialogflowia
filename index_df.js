@@ -23,24 +23,33 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
   }
   
   function getListadoMedicosDeEspecialidad(agent) {
-    return getSpreadSheetData('http://ia2020.ddns.net/MedicosEspecialidad/' + agent.parameters.especialidad).then( res => {
-      console.log(res.data);
-      // if (typeof res.data.data.Apellido !== 'undefined') {
-        agent.add('Los médicos disponibles para la especialidad ' + agent.parameters.especialidad + ' son:');
-        // res.data.data.map(medico => {
-        //   agent.add(medico.IdMedico + ' - ' + medico.Apellido + ', ' + medico.Nombre + ' - Obras Sociales: ' + medico.ObrasSociales + ' - Precio Consulta: ' + medico.PrecioConsulta + ' - Horario: ' + medico.Atencion);
-        // });
-        // agent.setContext({ name: 'UsuarioIngresaEspecialidad-FiltraProfesional-followup', parameters: {}});
-      // } else {
-      //   agent.add('No se encontró ningún médico disponible para la especialidad elegida.');
-      // }
-    });
+    console.log(agent.parameters);
+    // let params = agent.getContext('UsuarioIngresaEspecialidad-followup').parameters;
+    // console.log(params);
+    if (typeof agent.parameters.especialidad !== 'undefined') {
+      
+      return getSpreadSheetData('http://ia2020.ddns.net/MedicosEspecialidad/' + agent.parameters.especialidad).then( res => {
+        console.log(res.data);
+        if (typeof res.data.data.length !== 'undefined' && res.data.data.length > 0) {
+          agent.add('Los médicos disponibles para la especialidad ' + agent.parameters.especialidad + ' son:');
+          res.data.data.map(medico => {
+            agent.add(medico.IdMedico + ' - ' + medico.ApellidoNombre + ' - Obras Sociales: ' + medico.ObrasSociales + ' - Precio Consulta: ' + medico.PrecioConsulta + ' - Horario: ' + medico.Atencion);
+          });
+          agent.add('Por favor elija un Médico');
+          // agent.setContext({ name: 'UsuarioIngresaEspecialidad-FiltraProfesional-followup', parameters: {}});
+        } else {
+          agent.add('No se encontró ningún médico disponible para la especialidad elegida.');
+        }
+      });
+    } else {
+      agent.add('Lo siento, tiene que elegir una especialidad');
+    }
   }
 
   function getListadoMedicos(agent) {
     return getSpreadSheetData('http://ia2020.ddns.net/sheet/Medicos').then( res => {
       	res.data.map(medico => {
-            agent.add(medico.IdMedico + ' - ' + medico.Apellido + ', ' + medico.Nombre + ' - ' + medico.Atencion);
+            agent.add(medico.IdMedico + ' - ' + medico.ApellidoNombre + ', ' + medico.Nombre + ' - ' + medico.Atencion);
         });
     });
   }
@@ -50,7 +59,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
       if (typeof res.data.Apellido !== 'undefined') {
         agent.add('Los turnos disponibles para el médico elegido son: ');
         res.data.map(turno => {
-          agent.add(turno.IdTurno + ' - ' + turno.Fecha + ', ' + turno.HoraInicio + ' - ' + turno.Apellido + ', ' + turno.Nombre);
+          agent.add(turno.IdTurno + ' - ' + turno.Fecha + ', ' + turno.HoraInicio + ' - ' + turno.ApellidoNombre);
         });
         agent.setContext({ name: 'UsuarioEligeFecha-followup', parameters: {}});
       } else {
@@ -61,14 +70,15 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
 
   function getListadoMedicosPorApellido(agent) {
     return getSpreadSheetData('http://ia2020.ddns.net/Medicos/Apellido/' + agent.parameters.Apellido).then( res => {
+      let medico = res.data.data;
       if (typeof res.data.Apellido !== 'undefined') {
         agent.add('Los turnos disponibles para el Apellido elegido son: ');
-        res.data.map(turno => {
-          agent.add(turno.IdTurno + ' - ' + turno.Fecha + ', ' + turno.HoraInicio + ' - ' + turno.Apellido + ', ' + turno.Nombre  + ', ' + turno.Especialidad);
-        });
-        agent.setContext({ name: 'IndicaProfesional-followup', parameters: {}});
+          agent.add(medico.ApellidoNombre  + ' - ' + medico.Especialidad  + ' - Precio Consulta: ' + medico.PrecioConsulta  + ' - Obras Sociales: ' + medico.ObrasSociales  + ' - ' + medico.Atencion);
+          agent.parameters.IdMedico = medico.IdMedico;
+          agent.parameters.profesional = medico.ApellidoNombre;
+        // agent.setContext({ name: 'IndicaProfesional-followup', parameters: {}});
       } else {
-        agent.add('No se encontró ningún turno disponible para el médico elegido.');
+        agent.add('No se encontró ningún médico disponible con el Apellido elegido.');
       }
     });
   }
@@ -78,7 +88,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
       if (typeof res.data.Apellido !== 'undefined') {
         agent.add('Los medicos disponibles para la Obra Social elegida son: ');
         res.data.map(medico => {
-          agent.add(medico.IdMedico + ' - ' + medico.Apellido + ', ' + medico.Nombre  + ' - ' + medico.Especialidad);
+          agent.add(medico.IdMedico + ' - ' + medico.ApellidoNombre + ', ' + medico.Nombre  + ' - ' + medico.Especialidad);
         });
         agent.setContext({ name: 'IndicaProfesional-followup', parameters: {}});
       } else {
@@ -92,7 +102,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
       if (typeof res.data.Apellido !== 'undefined') {
         agent.add('Los turnos disponibles para la Fecha elegida son: ');
         res.data.map(turno => {
-          agent.add(turno.IdTurno + ' - ' + turno.Fecha + ', ' + turno.HoraInicio + ' - ' + turno.Apellido + ', ' + turno.Nombre  + ', ' + turno.Especialidad);
+          agent.add(turno.IdTurno + ' - ' + turno.Fecha + ', ' + turno.HoraInicio + ' - ' + turno.ApellidoNombre  + ', ' + turno.Especialidad);
         });
         agent.setContext({ name: 'IndicaProfesional-followup', parameters: {}});
       } else {
@@ -106,7 +116,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
       if (typeof res.data.Apellido !== 'undefined') {
         agent.add('Los turnos disponibles para la Fecha y el Médico elegido son: ');
         res.data.map(turno => {
-          agent.add(turno.IdTurno + ' - ' + turno.Fecha + ', ' + turno.HoraInicio + ' - ' + turno.Apellido + ', ' + turno.Nombre  + ', ' + turno.Especialidad  + ', ' + turno.PrecioConsulta);
+          agent.add(turno.IdTurno + ' - ' + turno.Fecha + ', ' + turno.HoraInicio + ' - ' + turno.ApellidoNombre  + ', ' + turno.Especialidad  + ', ' + turno.PrecioConsulta);
         });
         agent.setContext({ name: 'IndicaProfesional-followup', parameters: {}});
       } else {
