@@ -54,22 +54,9 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
         }
     }
 
-    function indicaProfesional(agent) {
+    function listadoCompletoIndicaProfesional(agent) {
         //Si tiene fecha y profesional
-        if (typeof agent.parameters.date !== 'undefined' && agent.parameters.date !== '' && 
-        typeof agent.parameters.profesional !== 'undefined' && agent.parameters.profesional !== '') {
-            return getSpreadSheetData('Turnos/Apellido/' + agent.parameters.profesional + '/Fecha/' + agent.parameters.date).then( res => {
-                 if (typeof res.data.data.length !== 'undefined' && res.data.data.length > 0) {
-                   agent.add('Los turnos disponibles son:');
-                   res.data.data.map(turno => {
-                        agent.add(getTurnoInfo(turno));
-                    });
-                   agent.add('Indique el número de turno que desea elegir');
-                 } else {
-                   agent.add('Eligió un médico incorrecto');
-                 }
-               });
-         } else if (typeof agent.parameters.profesional !== 'undefined' && agent.parameters.profesional !== '') {
+        if (typeof agent.parameters.profesional !== 'undefined' && agent.parameters.profesional !== '') {
            return getSpreadSheetData('Medicos/Apellido/' + agent.parameters.profesional).then( res => {
                 if (typeof res.data.data.MatriculaProfesional !== 'undefined' && res.data.data.MatriculaProfesional > 0) {
                   agent.add('El médico elegido es:');
@@ -87,6 +74,46 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
                 }
               });
         } else {
+            agent.add('Lo siento, tiene que elegir un profesional');
+        }
+    }
+
+    function filtraFechaIndicaProfesional(agent) {
+        //Si tiene fecha y profesional
+        if (typeof agent.parameters.date !== 'undefined' && agent.parameters.date !== '' && 
+        typeof agent.parameters.profesional !== 'undefined' && agent.parameters.profesional !== '') {
+            return getSpreadSheetData('Turnos/Apellido/' + agent.parameters.profesional + '/Fecha/' + agent.parameters.date).then( res => {
+                 if (typeof res.data.data.length !== 'undefined' && res.data.data.length > 0) {
+                   agent.add('Los turnos disponibles son:');
+                   res.data.data.map(turno => {
+                        agent.add(getTurnoInfo(turno));
+                    });
+                   agent.add('Indique el número de turno que desea elegir');
+                 } else {
+                   agent.add('Eligió un médico incorrecto');
+                 }
+               });
+         } else {
+            agent.add('Lo siento, tiene que elegir un profesional');
+        }
+    }
+
+    function filtraObraSocialIndicaProfesional(agent) {
+        //Si tiene Obra Social y Especialidad
+        if (typeof agent.parameters.ObraSocial !== 'undefined' && agent.parameters.ObraSocial !== '' && 
+        typeof agent.parameters.especialidad !== 'undefined' && agent.parameters.especialidad !== '') {
+            return getSpreadSheetData('Medicos/ObraSocial/' + agent.parameters.ObraSocial + '/Especialidad/' + agent.parameters.especialidad).then( res => {
+                 if (typeof res.data.data.length !== 'undefined' && res.data.data.length > 0) {
+                   agent.add('Los médicos disponibles son:');
+                   res.data.data.map(medico => {
+                        agent.add(getMedicoInfo(medico));
+                    });
+                   agent.add('Por favor elija un médico');
+                 } else {
+                   agent.add('Eligió un médico incorrecto');
+                 }
+               });
+         } else {
             agent.add('Lo siento, tiene que elegir un profesional');
         }
     }
@@ -242,10 +269,12 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     // Run the proper function handler based on the matched Dialogflow intent name
     let intentMap = new Map();
     intentMap.set('UsuarioIngresaEspecialidad-ListadoCompleto', getListadoMedicosDeEspecialidad);
-    intentMap.set('UsuarioIngresaEspecialidad-ListadoCompleto-IndicaProfesional', indicaProfesional);
+    intentMap.set('UsuarioIngresaEspecialidad-ListadoCompleto-IndicaProfesional', listadoCompletoIndicaProfesional);
+    intentMap.set('UsuarioIngresaEspecialidad-FiltraFecha-IndicaProfesional', filtraFechaIndicaProfesional);
     intentMap.set('UsuarioIngresaEspecialidad-FiltraProfesional', getListadoMedicosPorApellido);
     intentMap.set('UsuarioIngresaEspecialidad-FiltraFecha', getListadoFechasMedico);
     intentMap.set('UsuarioIngresaEspecialidad-FiltraObraSocial', getListadoMedicosObraSocial);
+    intentMap.set('UsuarioIngresaEspecialidad-FiltraObraSocial-IndicaProfesional', filtraObraSocialIndicaProfesional);
     intentMap.set('UsuarioEligeFecha', getTurnosFechasMedico);
     intentMap.set('UsuarioIndicaDNI', isPacienteExistente);
     intentMap.set('UsuarioPideTurno', savePaciente);

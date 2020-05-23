@@ -163,12 +163,12 @@ class GoogleSheetsController extends Controller
 
     public function getTurnosApellidoFecha(string $apellido, string $fecha)
     {
-        $cacheId = 'TurnosApellidoFecha'. $apellido . $fecha;
+        $cacheId = 'TurnosApellidoNombreFecha'. $apellido . $fecha;
 
         if (Cache::has($cacheId)) {
             return $this->sendResponse(Cache::get($cacheId), 'Medicos');
         }
-        $fechaFormateada = \Carbon\Carbon::parse($fecha);
+        $fechaFormateada = \Carbon\Carbon::parse($fecha)->format('Y-m-d');
         $medico = $this->getSheetsData('Medicos')->firstWhere('ApellidoNombre', $apellido);
         $sheetId = 'TurnosMedicos';
         $turnos = $this->getSheetsData($sheetId)
@@ -178,9 +178,7 @@ class GoogleSheetsController extends Controller
 
         $turnosToRemove = [];
         foreach ($turnos as $key => $turno) {
-            // dd($turno['Fecha']);
-            $fechaTurno = \Carbon\Carbon::parse($turno['Fecha']);
-            if ($fechaFormateada->equalTo($fechaTurno)) {
+            if ($this->isEqual($turno['Fecha'], $fechaFormateada)) {
                 $turno['ApellidoNombre'] = $medico['ApellidoNombre'];
                 $turno['Especialidad'] = $medico['Especialidad'];
                 $turno['PrecioConsulta'] = $medico['PrecioConsulta'];
