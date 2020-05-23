@@ -161,6 +161,38 @@ class GoogleSheetsController extends Controller
         }
     }
 
+    public function getTurnosApellidoFecha(string $apellido, string $fecha)
+    {
+        $cacheId = 'TurnosApellidoFecha'. $apellido . $fecha;
+
+        // if (Cache::has($cacheId)) {
+        //     return $this->sendResponse(Cache::get($cacheId), 'Medicos');
+        // }
+        $fechaFormateada = \Carbon\Carbon::parse($fecha);
+        $medico = $this->getSheetsData('Medicos')->firstWhere('ApellidoNombre', $apellido);
+        $sheetId = 'TurnosMedicos';
+        // dd($medico['MatriculaProfesional']);
+        $turnos = $this->getSheetsData($sheetId)
+                // ->where('Fecha', $fechaFormateada)
+                ->where('MatriculaProfesional', $medico['MatriculaProfesional'])
+                ->where('Estado', 'Disponible');
+
+        $turnosToRemove = [];
+        foreach ($turnos as $key => $turno) {
+            // dd($turno['Fecha']);
+            $fechaTurno = \Carbon\Carbon::parse($turno['Fecha']);
+            if ($fechaFormateada->equalTo($fechaTurno)) {
+                $turno['ApellidoNombre'] = $medico['ApellidoNombre'];
+                $turno['Especialidad'] = $medico['Especialidad'];
+                $turno['PrecioConsulta'] = $medico['PrecioConsulta'];
+            } else {
+                array_push($turnosToRemove, $key);
+            }
+        }
+        // Cache::add($cacheId, $turnos->except($turnosToRemove)->values(), 3600);
+        return $this->sendResponse($turnos->except($turnosToRemove)->values(), 'Turnos de Médico');
+    }
+
     public function getMedicosFechaEspecialidad(string $fecha, string $especialidad)
     {
         $cacheId = 'MedicosFechayEspecialidad'. $fecha . $especialidad;
