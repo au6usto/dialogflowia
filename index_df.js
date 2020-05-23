@@ -12,13 +12,15 @@ process.env.DEBUG = 'dialogflow:debug'; // enables lib debugging statements
 exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, response) => {
     const agent = new WebhookClient({ request, response });
 
+    const urlService = 'http://ia2020.ddns.net/';
+
     //axios GET
     function getSpreadSheetData(url) {
-        return axios.get(url);
+        return axios.get(urlService + url);
     }
     //axios POST
     function postSpreadSheetData(url, data) {
-        return axios.post(url, data);
+        return axios.post(urlService + url, data);
     }
     //Format Data
     function getMedicoInfo(medico) {
@@ -36,14 +38,14 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     function getListadoMedicosDeEspecialidad(agent) {
         if (typeof agent.parameters.especialidad !== 'undefined' && agent.parameters.especialidad !== '') {
             agent.add('Buscando médicos con Especialidad ' + agent.parameters.especialidad);
-            return getSpreadSheetData('http://ia2020.ddns.net/MedicosEspecialidad/' + agent.parameters.especialidad).then(res => {
+            return getSpreadSheetData('MedicosEspecialidad/' + agent.parameters.especialidad).then(res => {
                 if (typeof res.data.data.length !== 'undefined' && res.data.data.length > 0) {
                     agent.add('Los médicos disponibles para la especialidad ' + agent.parameters.especialidad + ' son:');
                     res.data.data.map(medico => {
                         agent.add(getMedicoInfo(medico));
                     });
                     agent.add('Por favor elija un Médico');
-                    // return getSpreadSheetData('http://ia2020.ddns.net/Medico/' + agent.parameters.profesional).then( res => {
+                    // return getSpreadSheetData('Medico/' + agent.parameters.profesional).then( res => {
                     //     if (typeof res.data.data.MatriculaProfesional !== 'undefined' && res.data.data.MatriculaProfesional > 0) {
                     //       agent.add('El médico elegido es:');
                     //       agent.add(getMedicoInfo(res.data.data));
@@ -62,7 +64,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     }
 
     function getListadoTurnosDeMedico(agent) {
-        return getSpreadSheetData('http://ia2020.ddns.net/Medico/Turnos/' + agent.parameters.MatriculaProfesional).then(res => {
+        return getSpreadSheetData('Medico/Turnos/' + agent.parameters.MatriculaProfesional).then(res => {
             if (typeof res.data.data.length !== 'undefined' && res.data.data.length > 0) {
                 agent.add('Los turnos disponibles para el médico elegido son: ');
                 res.data.data.map(turno => {
@@ -76,7 +78,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
 
     function getListadoMedicosPorApellido(agent) {
         if (typeof agent.parameters.profesional !== 'undefined' && agent.parameters.profesional !== '') {
-            return getSpreadSheetData('http://ia2020.ddns.net/Medicos/Apellido/' + agent.parameters.profesional).then(res => {
+            return getSpreadSheetData('Medicos/Apellido/' + agent.parameters.profesional).then(res => {
                 if (typeof res.data.success !== 'undefined' && res.data.success) {
                     let medico = res.data.data;
                     agent.add('Los datos del médico son los siguientes: ');
@@ -91,7 +93,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     }
 
     function getListadoMedicosObraSocial(agent) {
-        return getSpreadSheetData('http://ia2020.ddns.net/Medicos/ObraSocial/' + agent.parameters.ObraSocial).then(res => {
+        return getSpreadSheetData('Medicos/ObraSocial/' + agent.parameters.ObraSocial).then(res => {
             if (typeof res.data.data.ApellidoNombre !== 'undefined') {
                 agent.add('Los medicos disponibles para la Obra Social elegida son: ');
                 res.data.data.map(medico => {
@@ -104,7 +106,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     }
 
     function getListadoMedicosFecha(agent) {
-        return getSpreadSheetData('http://ia2020.ddns.net/Medicos/Fecha/' + agent.parameters.Fecha).then(res => {
+        return getSpreadSheetData('Medicos/Fecha/' + agent.parameters.Fecha).then(res => {
             if (typeof res.data.data.ApellidoNombre !== 'undefined') {
                 agent.add('Los turnos disponibles para la Fecha elegida son: ');
                 res.data.data.map(turno => {
@@ -117,7 +119,16 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     }
 
     function getListadoFechasMedico(agent) {
-        return getSpreadSheetData('http://ia2020.ddns.net/Turnos/Fecha/' + agent.parameters.Fecha + '/Medico/' + agent.parameters.MatriculaProfesional).then(res => {
+        agent.add('asdaasd');
+        let url = urlService;
+        if (typeof agent.parameters.MatriculaProfesional !== 'undefined' && agent.parameters.MatriculaProfesional !== '') {
+            url = url + 'Turnos/Fecha/' + agent.parameters.Fecha + '/Medico/' + agent.parameters.MatriculaProfesional;
+        } else {
+            url = url + 'Turnos/Fecha/' + agent.parameters.Fecha;
+        }
+
+        agent.add(url);
+        return getSpreadSheetData(url).then(res => {
             if (typeof res.data.data.Apellido !== 'undefined') {
                 agent.add('Los turnos disponibles para la Fecha y el Médico elegido son: ');
                 res.data.data.map(turno => {
@@ -130,7 +141,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     }
 
     function isPacienteExistente(agent) {
-        return getSpreadSheetData('http://ia2020.ddns.net/Paciente/' + agent.parameters.number).then(res => {
+        return getSpreadSheetData('Paciente/' + agent.parameters.number).then(res => {
             if (typeof res.data.data.Apellido !== 'undefined') {
                 agent.add('¡Muy bien! Sus datos son: ');
                 agent.add(getPacienteInfo(res.data.data));
@@ -154,7 +165,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
             IdTurno: agent.parameters.IdTurno
         };
 
-        return postSpreadSheetData('http://ia2020.ddns.net/Paciente/', data).then(res => {
+        return postSpreadSheetData('Paciente/', data).then(res => {
             if (res.data.success) {
                 agent.add(`El paciente fue creado y su turno fue asignado correctamente`);
             } else {
