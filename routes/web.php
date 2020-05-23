@@ -33,4 +33,5 @@ Route::get('/Medicos/Fecha/{fecha}', 'GoogleSheetsController@getMedicosFecha');
 Route::get('/Medicos/ObraSocial/{obraSocial}/Especialidad/{especialidad}', 'GoogleSheetsController@getMedicosObraSocial');
 Route::get('/Medicos/Apellido/{apellido}', 'GoogleSheetsController@getMedicosApellido');
 Route::get('/Turnos/ObraSocial/{obraSocial}', 'GoogleSheetsController@getTurnosObraSocial');
+Route::get('/Turno/{IdTurno}', 'GoogleSheetsController@isTurno');
 Route::get('/home', 'HomeController@index')->name('home');

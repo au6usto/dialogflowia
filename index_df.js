@@ -98,6 +98,10 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
         }
     }
 
+    function usuarioEligeFecha(agent) {
+        return filtraFechaIndicaProfesional(agent);
+    }
+
     function filtraObraSocialIndicaProfesional(agent) {
         //Si tiene Obra Social y Especialidad
         if (typeof agent.parameters.ObraSocial !== 'undefined' && agent.parameters.ObraSocial !== '' && 
@@ -167,6 +171,20 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
         }
     }
 
+    function usuarioEligeTurno(agent) {
+        if (typeof agent.parameters.turno !== 'undefined' && agent.parameters.turno !== '') {
+            return getSpreadSheetData('Turno/' + agent.parameters.turno).then(res => {
+                if (res.data.success) {
+                    agent.add('¡Muy bien! ¿Posee Obra Social? En Caso de Tenerla, por favor indique a continuación cuál de ellas es.');
+                } else {
+                    agent.add('No se encontró ningún Turno con el número ingresado');
+                }
+            });
+        } else {
+            agent.add('Lo siento, tiene que elegir un número de Turno');
+        }
+    }
+
     // function getListadoMedicosFecha(agent) {
     //     return getSpreadSheetData('Medicos/Fecha/' + agent.parameters.Fecha).then(res => {
     //         if (typeof res.data.data.ApellidoNombre !== 'undefined') {
@@ -180,26 +198,26 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     //     });
     // }
 
-    function getTurnosFechasMedico(agent) {
-        let url = '';
-        if (typeof agent.parameters.MatriculaProfesional !== 'undefined' && agent.parameters.MatriculaProfesional !== '' && agent.parameters.MatriculaProfesional !== 'MatriculaProfesional') {
-            url = 'Turnos/Fecha/' + agent.parameters.Fecha + '/Medico/' + agent.parameters.MatriculaProfesional;
-        } else {
-            url = 'Turnos/Fecha/' + agent.parameters.Fecha;
-        }
+    // function getTurnosFechasMedico(agent) {
+    //     let url = '';
+    //     if (typeof agent.parameters.MatriculaProfesional !== 'undefined' && agent.parameters.MatriculaProfesional !== '' && agent.parameters.MatriculaProfesional !== 'MatriculaProfesional') {
+    //         url = 'Turnos/Fecha/' + agent.parameters.Fecha + '/Medico/' + agent.parameters.MatriculaProfesional;
+    //     } else {
+    //         url = 'Turnos/Fecha/' + agent.parameters.Fecha;
+    //     }
 
-        agent.add(url);
-        return getSpreadSheetData(url).then(res => {
-            if (typeof res.data.data.length !== 'undefined' && res.data.data.length > 0) {
-                agent.add('Los turnos disponibles para la Fecha y el Médico elegido son: ');
-                res.data.data.map(turno => {
-                    agent.add(getTurnoInfo(turno));
-                });
-            } else {
-                agent.add('No se encontró ningún turno disponible para la Fecha y Médico elegidos.');
-            }
-        });
-    }
+    //     agent.add(url);
+    //     return getSpreadSheetData(url).then(res => {
+    //         if (typeof res.data.data.length !== 'undefined' && res.data.data.length > 0) {
+    //             agent.add('Los turnos disponibles para la Fecha y el Médico elegido son: ');
+    //             res.data.data.map(turno => {
+    //                 agent.add(getTurnoInfo(turno));
+    //             });
+    //         } else {
+    //             agent.add('No se encontró ningún turno disponible para la Fecha y Médico elegidos.');
+    //         }
+    //     });
+    // }
   
   function getListadoFechasMedico(agent) {
         let url = '';
@@ -275,8 +293,9 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     intentMap.set('UsuarioIngresaEspecialidad-FiltraFecha', getListadoFechasMedico);
     intentMap.set('UsuarioIngresaEspecialidad-FiltraObraSocial', getListadoMedicosObraSocial);
     intentMap.set('UsuarioIngresaEspecialidad-FiltraObraSocial-IndicaProfesional', filtraObraSocialIndicaProfesional);
-    intentMap.set('UsuarioEligeFecha', getTurnosFechasMedico);
+    intentMap.set('UsuarioEligeFecha', usuarioEligeFecha);
     intentMap.set('UsuarioIndicaDNI', isPacienteExistente);
+    intentMap.set('UsuarioEligeturno', usuarioEligeTurno);
     intentMap.set('UsuarioPideTurno', savePaciente);
     intentMap.set('Default Fallback Intent', fallback);
     agent.handleRequest(intentMap);

@@ -132,6 +132,18 @@ class GoogleSheetsController extends Controller
         return $this->sendResponse($turnos->values(), 'Turnos de Médico');
     }
 
+    public function isTurno($numero)
+    {
+        $sheetId = 'TurnosMedicos';
+        $turno = $this->getSheetsData($sheetId)
+                ->where('IdTurno', $numero)
+                ->where('Estado', 'Disponible')
+                ->first();
+        return isset($turno) ?
+        $this->sendResponse($turno, 'Turno Correcto') :
+        $this->sendError('No se pudo encontrar el turno');
+    }
+
     public function getTurnosFechaMedico($fecha, $MatriculaProfesional = null)
     {
         if (isset($MatriculaProfesional)) {
