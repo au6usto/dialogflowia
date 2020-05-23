@@ -161,33 +161,34 @@ class GoogleSheetsController extends Controller
         }
     }
 
-    public function getTurnosFechaEspecialidad($fecha, $especialidad)
+    public function getTurnosFechaEspecialidad(string $fecha, string $especialidad)
     {
-        if (isset($MatriculaProfesional)) {
-            $cacheId = 'TurnosFechaEspecialidad'. $fecha . $especialidad;
+        $cacheId = 'TurnosFechaEspecialidad'. $fecha . $especialidad;
 
-            if (Cache::has($cacheId)) {
-                return $this->sendResponse(Cache::get($cacheId), 'Medicos');
-            }
-            $fechaFormateada = \Carbon\Carbon::parse($fecha)->format('Y-m-d');
-            $medicos = $this->getSheetsData('Medicos');
-            $sheetId = 'TurnosMedicos';
-            $turnos = $this->getSheetsData($sheetId)
+        // if (Cache::has($cacheId)) {
+        //     return $this->sendResponse(Cache::get($cacheId), 'Medicos');
+        // }
+        $fechaFormateada = \Carbon\Carbon::parse($fecha)->format('Y-m-d');
+        $medicos = $this->getSheetsData('Medicos');
+        $sheetId = 'TurnosMedicos';
+        $turnos = $this->getSheetsData($sheetId)
                 ->where('Fecha', $fechaFormateada)
-                ->where('Especialidad', $especialidad)
+                // ->where('Especialidad', $especialidad)
                 ->where('Estado', 'Disponible');
-
-            $medico = $medicos->firstWhere('Especialidad', $especialidad);
-            foreach ($turnos as $turno) {
+        // dd($turnos);
+        $turnosToRemove = [];
+        foreach ($turnos as $key => $turno) {
+            $medico = $medicos->firstWhere('MatriculaProfesional', $turno['MatriculaProfesional']);
+            if ($this->isEqual($medico['Especialidad'], $especialidad)) {
                 $turno['ApellidoNombre'] = $medico['ApellidoNombre'];
                 $turno['Especialidad'] = $medico['Especialidad'];
                 $turno['PrecioConsulta'] = $medico['PrecioConsulta'];
+            } else {
+                array_push($turnosToRemove, $key);
             }
-            Cache::add($cacheId, $turnos->values(), 3600);
-            return $this->sendResponse($turnos->values(), 'Turnos de Médico');
-        } else {
-            return $this->getTurnos($fecha);
         }
+        // Cache::add($cacheId, $turnos->values(), 3600);
+        return $this->sendResponse($turnos->except($turnosToRemove)->values(), 'Turnos de Médico');
     }
 
     public function getTurnosFecha($anio, $mes, $dia)
