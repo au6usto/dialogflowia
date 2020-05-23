@@ -163,7 +163,7 @@ class GoogleSheetsController extends Controller
 
     public function getMedicosFechaEspecialidad(string $fecha, string $especialidad)
     {
-        $cacheId = 'MedicosFechaEspecialidad'. $fecha . $especialidad;
+        $cacheId = 'MedicosFechayEspecialidad'. $fecha . $especialidad;
 
         if (Cache::has($cacheId)) {
             return $this->sendResponse(Cache::get($cacheId), 'Medicos');
@@ -176,7 +176,8 @@ class GoogleSheetsController extends Controller
                 ->where('Estado', 'Disponible');
         $medicosToRemove = [];
         foreach ($medicos as $key => $medico) {
-            if ($turnos->firstWhere('MatriculaProfesional', $medico['MatriculaProfesional'] !== null)) {
+            if ($turnos->firstWhere('MatriculaProfesional', $medico['MatriculaProfesional']) !== null &&
+            $this->isEqual($medico['Especialidad'], $especialidad)) {
             } else {
                 array_push($medicosToRemove, $key);
             }
