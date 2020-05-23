@@ -65,7 +65,7 @@ class GoogleSheetsController extends Controller
         $sheetId = 'Medicos';
         $medicos = $this->getSheetsData($sheetId);
         foreach ($medicos as $medico) {
-            if (stripos(preg_replace('/\s+/', '', $medicos['ApellidoNombre']), preg_replace('/\s+/', '', $apellido)) !== false) {
+            if (isset($medico['ApellidoNombre']) && stripos(preg_replace('/\s+/', '', $medico['ApellidoNombre']), preg_replace('/\s+/', '', $apellido)) !== false) {
                 return $this->sendResponse($medico, 'Medico por Apellido');
             }
         }
