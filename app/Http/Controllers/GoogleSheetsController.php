@@ -204,7 +204,7 @@ class GoogleSheetsController extends Controller
         
         $medicosFiltrados = $medicos->except($medicosToRemove)->values();
         Cache::add($cacheId, $medicosFiltrados, 3600);
-        return $medicosFiltrados;
+        return $this->sendResponse($medicosFiltrados, 'Medicos de OS y Especialidad');
     }
 
     public function getTurnosObraSocial(string $obraSocial)
