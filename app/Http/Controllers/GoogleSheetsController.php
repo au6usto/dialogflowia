@@ -121,7 +121,7 @@ class GoogleSheetsController extends Controller
         return $this->sendResponse($turnos->values(), 'Turnos de Médico');
     }
 
-    public function getTurnosFechaMedico($fecha, $MatriculaProfesional)
+    public function getTurnosFechaMedico($fecha, $MatriculaProfesional = null)
     {
         if (isset($MatriculaProfesional)) {
             $cacheId = 'TurnosMedico'. $fecha . $MatriculaProfesional;
