@@ -28,7 +28,7 @@ Route::get('/Turnos/Fecha/{fecha}/Medico/{IdMedico}', 'GoogleSheetsController@ge
 Route::get('/Turnos/Fecha/{fecha}', 'GoogleSheetsController@getTurnosFechaMedico');
 Route::get('/Turnos/Fecha/{anio}/{mes}/{dia}', 'GoogleSheetsController@getTurnosFecha');
 Route::get('/Medicos/Fecha/{fecha}', 'GoogleSheetsController@getMedicosFecha');
-Route::get('/Medicos/ObraSocial/{obraSocial}', 'GoogleSheetsController@getMedicosObraSocial');
+Route::get('/Medicos/ObraSocial/{obraSocial}/Especialidad/{especialidad}', 'GoogleSheetsController@getMedicosObraSocial');
 Route::get('/Medicos/Apellido/{apellido}', 'GoogleSheetsController@getMedicosApellido');
 Route::get('/Turnos/ObraSocial/{obraSocial}', 'GoogleSheetsController@getTurnosObraSocial');
 Route::get('/home', 'HomeController@index')->name('home');

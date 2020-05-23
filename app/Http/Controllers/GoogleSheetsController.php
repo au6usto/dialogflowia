@@ -166,7 +166,7 @@ class GoogleSheetsController extends Controller
         return $this->getTurnos($anio . '-' . $mes . '-' . $dia);
     }
 
-    public function getMedicosObraSocial(string $obraSocial)
+    public function getMedicosObraSocial(string $obraSocial, $especialidad)
     {
         $cacheId = 'MedicosObraSocial'. $obraSocial;
 
@@ -187,9 +187,11 @@ class GoogleSheetsController extends Controller
         $medicosToRemove = [];
         $arrayIdsMedicos = [];
         foreach ($medicos as $medico) {
-            foreach ($medico['ObrasSociales'] as $os) {
-                if ($this->isEqual($os, $obraSocial)) {
-                    array_push($arrayIdsMedicos, $medico['MatriculaProfesional']);
+            if ($this->isEqual($medico['Especialidad'], $especialidad)) {
+                foreach ($medico['ObrasSociales'] as $os) {
+                    if ($this->isEqual($os, $obraSocial)) {
+                        array_push($arrayIdsMedicos, $medico['MatriculaProfesional']);
+                    }
                 }
             }
         }
