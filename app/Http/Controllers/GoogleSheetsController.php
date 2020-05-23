@@ -34,6 +34,12 @@ class GoogleSheetsController extends Controller
         return $this->getSheetsData($sheetId)->firstWhere('DNI', $DNI);
     }
 
+    public function isEqual($property1, $property2)
+    {
+        return isset($property1, $property2) &&
+        stripos(preg_replace('/\s+/', '', $property1), preg_replace('/\s+/', '', $property2)) !== false;
+    }
+
     public function getMedicosEspecialidad($especialidad)
     {
         if (Cache::has('MedicosEspecialidad'. $especialidad)) {
@@ -44,7 +50,7 @@ class GoogleSheetsController extends Controller
         $medicos = $this->getSheetsData($sheetId);
         $medicosConEspecialidad = [];
         foreach ($medicos as $key => $medico) {
-            if (stripos(preg_replace('/\s+/', '', $medico['Especialidad']), preg_replace('/\s+/', '', $especialidad)) !== false) {
+            if ($this->isEqual($medico['Especialidad'], $especialidad)) {
                 array_push($medicosConEspecialidad, $key);
             }
         }
@@ -65,7 +71,7 @@ class GoogleSheetsController extends Controller
         $sheetId = 'Medicos';
         $medicos = $this->getSheetsData($sheetId);
         foreach ($medicos as $medico) {
-            if (isset($medico['ApellidoNombre']) && stripos(preg_replace('/\s+/', '', $medico['ApellidoNombre']), preg_replace('/\s+/', '', $apellido)) !== false) {
+            if ($this->isEqual($medico['ApellidoNombre'], $apellido)) {
                 return $this->sendResponse($medico, 'Medico por Apellido');
             }
         }
@@ -92,23 +98,70 @@ class GoogleSheetsController extends Controller
         return $medicos->except($medicosToRemove);
     }
 
-    public function getTurnosFechaMedico($fecha, $MatriculaProfesional)
+    public function getTurnos($fecha)
     {
+        $fechaFormateada = \Carbon\Carbon::parse($fecha)->format('Y-m-d');
+        $cacheId = 'TurnosFecha'. $fecha;
+
+        if (Cache::has($cacheId)) {
+            return $this->sendResponse(Cache::get($cacheId), 'Medicos');
+        }
+
         $medicos = $this->getSheetsData('Medicos');
-        $turnos = $this->getSheetsData('TurnosMedicos')
-        ->where('Fecha', \Carbon\Carbon::parse($fecha)->format('Y-m-d'))
-        ->where('MatriculaProfesional', $MatriculaProfesional)
-        ->where('Estado', 'Disponible');
-        foreach ($turnos as $key => $turno) {
+        $sheetId = 'TurnosMedicos';
+        $turnos = $this->getSheetsData($sheetId)
+                ->where('Fecha', $fechaFormateada)
+                ->where('Estado', 'Disponible');
+        foreach ($turnos as $turno) {
             $turno['ApellidoNombre'] = $medicos->firstWhere('MatriculaProfesional', $turno['MatriculaProfesional'])['ApellidoNombre'];
             $turno['Especialidad'] = $medicos->firstWhere('MatriculaProfesional', $turno['MatriculaProfesional'])['Especialidad'];
             $turno['PrecioConsulta'] = $medicos->firstWhere('MatriculaProfesional', $turno['MatriculaProfesional'])['PrecioConsulta'];
         }
-        return $turnos;
+        Cache::add($cacheId, $turnos->values(), 3600);
+        return $this->sendResponse($turnos->values(), 'Turnos de Médico');
+    }
+
+    public function getTurnosFechaMedico($fecha, $MatriculaProfesional)
+    {
+        if (isset($MatriculaProfesional)) {
+            $cacheId = 'TurnosMedico'. $fecha . $MatriculaProfesional;
+
+            if (Cache::has($cacheId)) {
+                return $this->sendResponse(Cache::get($cacheId), 'Medicos');
+            }
+            $fechaFormateada = \Carbon\Carbon::parse($fecha)->format('Y-m-d');
+            $medicos = $this->getSheetsData('Medicos');
+            $sheetId = 'TurnosMedicos';
+            $turnos = $this->getSheetsData($sheetId)
+                ->where('Fecha', $fechaFormateada)
+                ->where('MatriculaProfesional', $MatriculaProfesional)
+                ->where('Estado', 'Disponible');
+
+            $medico = $medicos->firstWhere('MatriculaProfesional', $MatriculaProfesional);
+            foreach ($turnos as $turno) {
+                $turno['ApellidoNombre'] = $medico['ApellidoNombre'];
+                $turno['Especialidad'] = $medico['Especialidad'];
+                $turno['PrecioConsulta'] = $medico['PrecioConsulta'];
+            }
+            Cache::add($cacheId, $turnos->values(), 3600);
+            return $this->sendResponse($turnos->values(), 'Turnos de Médico');
+        } else {
+            return $this->getTurnos($fecha);
+        }
+    }
+
+    public function getTurnosFecha($anio, $mes, $dia)
+    {
+        return $this->getTurnos($anio . '-' . $mes . '-' . $dia);
     }
 
     public function getMedicosObraSocial(string $obraSocial)
     {
+        $cacheId = 'MedicosObraSocial'. $obraSocial;
+
+        if (Cache::has($cacheId)) {
+            return $this->sendResponse(Cache::get($cacheId), 'Medicos');
+        }
         $medicos = $this->getSheetsData('Medicos');
         $medicos = $medicos->map(function ($item, $key) {
             if (isset($item['ObrasSociales'])) {
@@ -124,7 +177,7 @@ class GoogleSheetsController extends Controller
         $arrayIdsMedicos = [];
         foreach ($medicos as $medico) {
             foreach ($medico['ObrasSociales'] as $os) {
-                if (stripos(preg_replace('/\s+/', '', $os), preg_replace('/\s+/', '', $obraSocial)) !== false) {
+                if ($this->isEqual($os, $obraSocial)) {
                     array_push($arrayIdsMedicos, $medico['MatriculaProfesional']);
                 }
             }
@@ -135,7 +188,10 @@ class GoogleSheetsController extends Controller
                 array_push($medicosToRemove, $key);
             }
         }
-        return $medicos->except($medicosToRemove);
+        
+        $medicosFiltrados = $medicos->except($medicosToRemove)->values();
+        Cache::add($cacheId, $medicosFiltrados, 3600);
+        return $medicosFiltrados;
     }
 
     public function getTurnosObraSocial(string $obraSocial)
@@ -156,7 +212,7 @@ class GoogleSheetsController extends Controller
         $arrayIdsMedicos = [];
         foreach ($medicos as $medico) {
             foreach ($medico['ObrasSociales'] as $os) {
-                if (stripos(strtoupper(preg_replace('/\s+/', '', $os)), strtoupper(preg_replace('/\s+/', '', $obraSocial))) !== false) {
+                if ($this->isEqual($os, $obraSocial)) {
                     array_push($arrayIdsMedicos, $medico['MatriculaProfesional']);
                 }
             }
