@@ -25,6 +25,7 @@ Route::post('/Paciente', 'GoogleSheetsController@storePaciente');
 Route::get('/MedicosEspecialidad/{especialidad}', 'GoogleSheetsController@getMedicosEspecialidad');
 Route::get('/Medicos/Turnos/{idMedico}', 'GoogleSheetsController@getTurnosMedico');
 Route::get('/Turnos/Fecha/{fecha}/Medico/{IdMedico}', 'GoogleSheetsController@getTurnosFechaMedico');
+Route::get('/Turnos/Fecha/{fecha}/Especialidad/{especialidad}', 'GoogleSheetsController@getTurnosFechaEspecialidad');
 Route::get('/Turnos/Fecha/{fecha}', 'GoogleSheetsController@getTurnosFechaMedico');
 Route::get('/Turnos/Fecha/{anio}/{mes}/{dia}', 'GoogleSheetsController@getTurnosFecha');
 Route::get('/Medicos/Fecha/{fecha}', 'GoogleSheetsController@getMedicosFecha');

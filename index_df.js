@@ -139,7 +139,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     //     });
     // }
 
-    function getListadoFechasMedico(agent) {
+    function getTurnosFechasMedico(agent) {
         let url = '';
         if (typeof agent.parameters.MatriculaProfesional !== 'undefined' && agent.parameters.MatriculaProfesional !== '' && agent.parameters.MatriculaProfesional !== 'MatriculaProfesional') {
             url = 'Turnos/Fecha/' + agent.parameters.Fecha + '/Medico/' + agent.parameters.MatriculaProfesional;
@@ -158,6 +158,24 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
                 agent.add('No se encontró ningún turno disponible para la Fecha y Médico elegidos.');
             }
         });
+    }
+  
+  function getListadoFechasMedico(agent) {
+        let url = '';
+        if (typeof agent.parameters.especialidad !== 'undefined' && agent.parameters.especialidad !== '' &&
+           typeof agent.parameters.date !== 'undefined' && agent.parameters.date !== '') {
+            url = 'Turnos/Fecha/' + agent.parameters.Fecha + '/Especialidad/' + agent.parameters.especialidad;
+        return getSpreadSheetData(url).then(res => {
+            if (typeof res.data.data.length !== 'undefined' && res.data.data.length > 0) {
+                agent.add('Los turnos disponibles para la Fecha ' + agent.parameters.date + ' y la Especialidad  ' + agent.parameters.especialidad + ' son: ');
+                res.data.data.map(turno => {
+                    agent.add(getTurnoInfo(turno));
+                });
+            } else {
+                agent.add('No se encontró ningún turno disponible para la Fecha y Especialidad elegidas.');
+            }
+        });
+        }
     }
 
     function isPacienteExistente(agent) {
@@ -211,7 +229,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     intentMap.set('UsuarioIngresaEspecialidad-FiltraProfesional', getListadoMedicosPorApellido);
     intentMap.set('UsuarioIngresaEspecialidad-FiltraFecha', getListadoFechasMedico);
     intentMap.set('UsuarioIngresaEspecialidad-FiltraObraSocial', getListadoMedicosObraSocial);
-    intentMap.set('UsuarioEligeFecha', getListadoFechasMedico);
+    intentMap.set('UsuarioEligeFecha', getTurnosFechasMedico);
     intentMap.set('UsuarioIndicaDNI', isPacienteExistente);
     intentMap.set('UsuarioPideTurno', savePaciente);
     intentMap.set('Default Fallback Intent', fallback);
