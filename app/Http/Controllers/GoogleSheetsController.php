@@ -42,8 +42,9 @@ class GoogleSheetsController extends Controller
 
     public function getMedicosEspecialidad($especialidad)
     {
-        if (Cache::has('MedicosEspecialidad'. $especialidad)) {
-            return $this->sendResponse(Cache::get('MedicosEspecialidad'. $especialidad), 'Medicos de Especialidad');
+        $cacheId = 'MedicosEspecialidad'. $especialidad;
+        if (Cache::has($cacheId)) {
+            return $this->sendResponse(Cache::get($cacheId), 'Medicos de Especialidad');
         }
 
         $sheetId = 'Medicos';
@@ -56,14 +57,24 @@ class GoogleSheetsController extends Controller
         }
 
         $medicosFiltrados = $medicos->only($medicosConEspecialidad);
-        Cache::add('MedicosEspecialidad'. $especialidad, $medicosFiltrados->values(), 3600);
+        Cache::add($cacheId, $medicosFiltrados->values(), 3600);
         return $this->sendResponse($medicosFiltrados->values(), 'Medicos de Especialidad');
     }
 
     public function getTurnosMedico($MatriculaProfesional)
     {
+        $cacheId = 'TurnosDeMedico'. $MatriculaProfesional;
+        if (Cache::has($cacheId)) {
+            return $this->sendResponse(Cache::get($cacheId), 'Turnos');
+        }
+
         $sheetId = 'TurnosMedicos';
-        return $this->getSheetsData($sheetId)->where('MatriculaProfesional', $MatriculaProfesional)->where('Estado', 'Disponible');
+        $turnos = $this->getSheetsData($sheetId)
+            ->where('MatriculaProfesional', $MatriculaProfesional)
+            ->where('Estado', 'Disponible')
+            ->values();
+        Cache::add($cacheId, $turnos->values(), 3600);
+        return $this->sendResponse($turnos, 'Turnos');
     }
 
     public function getMedicosApellido($apellido)

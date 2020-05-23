@@ -63,8 +63,24 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
         }
     }
 
+    function indicaProfesional(agent) {
+        if (typeof agent.parameters.profesional !== 'undefined' && agent.parameters.profesional !== '') {
+           return getSpreadSheetData('Medico/' + agent.parameters.profesional).then( res => {
+                if (typeof res.data.data.MatriculaProfesional !== 'undefined' && res.data.data.MatriculaProfesional > 0) {
+                  agent.add('El médico elegido es:');
+                  agent.add(getMedicoInfo(res.data.data));
+                  agent.parameters.MatriculaProfesional = res.data.data.MatriculaProfesional;
+                } else {
+                  agent.add('Eligió un médico incorrecto');
+                }
+              });
+        } else {
+            agent.add('Lo siento, tiene que elegir un profesional');
+        }
+    }
+
     function getListadoTurnosDeMedico(agent) {
-        return getSpreadSheetData('Medico/Turnos/' + agent.parameters.MatriculaProfesional).then(res => {
+        return getSpreadSheetData('Medicos/Turnos/' + agent.parameters.MatriculaProfesional).then(res => {
             if (typeof res.data.data.length !== 'undefined' && res.data.data.length > 0) {
                 agent.add('Los turnos disponibles para el médico elegido son: ');
                 res.data.data.map(turno => {
@@ -183,6 +199,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     // Run the proper function handler based on the matched Dialogflow intent name
     let intentMap = new Map();
     intentMap.set('UsuarioIngresaEspecialidad - ListadoCompleto', getListadoMedicosDeEspecialidad);
+    intentMap.set('UsuarioIngresaEspecialidad - ListadoCompleto - IndicaProfesional', indicaProfesional);
     intentMap.set('UsuarioIngresaEspecialidad - FiltraProfesional', getListadoMedicosPorApellido);
     intentMap.set('UsuarioIngresaEspecialidad - FiltraFecha', getListadoFechasMedico);
     intentMap.set('UsuarioIngresaEspecialidad - FiltraObraSocial', getListadoMedicosObraSocial);
