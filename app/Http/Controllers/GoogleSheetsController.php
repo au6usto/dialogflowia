@@ -166,9 +166,9 @@ class GoogleSheetsController extends Controller
         return $this->getTurnos($anio . '-' . $mes . '-' . $dia);
     }
 
-    public function getMedicosObraSocial(string $obraSocial, $especialidad)
+    public function getMedicosObraSocial(string $obraSocial, string $especialidad)
     {
-        $cacheId = 'MedicosObraSocial'. $obraSocial;
+        $cacheId = 'MedicosObraSocialEsp'. $obraSocial . $especialidad;
 
         if (Cache::has($cacheId)) {
             return $this->sendResponse(Cache::get($cacheId), 'Medicos');
