@@ -28,10 +28,10 @@ class GoogleSheetsController extends Controller
         return $this->getSheetsData($sheetId);
     }
 
-    public function getPaciente($dni)
+    public function getPaciente($DNI)
     {
         $sheetId = 'Pacientes';
-        return $this->getSheetsData($sheetId)->firstWhere('Dni', $dni);
+        return $this->getSheetsData($sheetId)->firstWhere('DNI', $DNI);
     }
 
     public function getMedicosEspecialidad($especialidad)
@@ -54,10 +54,10 @@ class GoogleSheetsController extends Controller
         return $this->sendResponse($medicosFiltrados->values(), 'Medicos de Especialidad');
     }
 
-    public function getTurnosMedico($idMedico)
+    public function getTurnosMedico($MatriculaProfesional)
     {
         $sheetId = 'TurnosMedicos';
-        return $this->getSheetsData($sheetId)->where('IdMedico', $idMedico)->where('Estado', 'Disponible');
+        return $this->getSheetsData($sheetId)->where('MatriculaProfesional', $MatriculaProfesional)->where('Estado', 'Disponible');
     }
 
     public function getMedicosApellido($apellido)
@@ -79,30 +79,30 @@ class GoogleSheetsController extends Controller
         $medicosParaFecha = [];
         foreach ($turnos as $turno) {
             if ($turno['Fecha'] === $fecha) {
-                array_push($medicosParaFecha, $turno['IdMedico']);
+                array_push($medicosParaFecha, $turno['MatriculaProfesional']);
             }
         }
 
         $medicosToRemove = [];
         foreach ($medicos as $key => $medico) {
-            if (!in_array($medico['IdMedico'], $medicosParaFecha)) {
+            if (!in_array($medico['MatriculaProfesional'], $medicosParaFecha)) {
                 array_push($medicosToRemove, $key);
             }
         }
         return $medicos->except($medicosToRemove);
     }
 
-    public function getTurnosFechaMedico($fecha, $idMedico)
+    public function getTurnosFechaMedico($fecha, $MatriculaProfesional)
     {
         $medicos = $this->getSheetsData('Medicos');
         $turnos = $this->getSheetsData('TurnosMedicos')
         ->where('Fecha', \Carbon\Carbon::parse($fecha)->format('Y-m-d'))
-        ->where('IdMedico', $idMedico)
+        ->where('MatriculaProfesional', $MatriculaProfesional)
         ->where('Estado', 'Disponible');
         foreach ($turnos as $key => $turno) {
-            $turno['ApellidoNombre'] = $medicos->firstWhere('IdMedico', $turno['IdMedico'])['ApellidoNombre'];
-            $turno['Especialidad'] = $medicos->firstWhere('IdMedico', $turno['IdMedico'])['Especialidad'];
-            $turno['PrecioConsulta'] = $medicos->firstWhere('IdMedico', $turno['IdMedico'])['PrecioConsulta'];
+            $turno['ApellidoNombre'] = $medicos->firstWhere('MatriculaProfesional', $turno['MatriculaProfesional'])['ApellidoNombre'];
+            $turno['Especialidad'] = $medicos->firstWhere('MatriculaProfesional', $turno['MatriculaProfesional'])['Especialidad'];
+            $turno['PrecioConsulta'] = $medicos->firstWhere('MatriculaProfesional', $turno['MatriculaProfesional'])['PrecioConsulta'];
         }
         return $turnos;
     }
@@ -125,13 +125,13 @@ class GoogleSheetsController extends Controller
         foreach ($medicos as $medico) {
             foreach ($medico['ObrasSociales'] as $os) {
                 if (stripos(preg_replace('/\s+/', '', $os), preg_replace('/\s+/', '', $obraSocial)) !== false) {
-                    array_push($arrayIdsMedicos, $medico['IdMedico']);
+                    array_push($arrayIdsMedicos, $medico['MatriculaProfesional']);
                 }
             }
         }
 
         foreach ($medicos as $key => $medico) {
-            if (!in_array($medico['IdMedico'], $arrayIdsMedicos)) {
+            if (!in_array($medico['MatriculaProfesional'], $arrayIdsMedicos)) {
                 array_push($medicosToRemove, $key);
             }
         }
@@ -157,15 +157,15 @@ class GoogleSheetsController extends Controller
         foreach ($medicos as $medico) {
             foreach ($medico['ObrasSociales'] as $os) {
                 if (stripos(strtoupper(preg_replace('/\s+/', '', $os)), strtoupper(preg_replace('/\s+/', '', $obraSocial))) !== false) {
-                    array_push($arrayIdsMedicos, $medico['IdMedico']);
+                    array_push($arrayIdsMedicos, $medico['MatriculaProfesional']);
                 }
             }
         }
 
         foreach ($turnos as $key => $turno) {
-            if (in_array($turno['IdMedico'], $arrayIdsMedicos)) {
-                $turno['ApellidoNombre'] = $medicos->firstWhere('IdMedico', $turno['IdMedico'])['ApellidoNombre'];
-                $turno['Especialidad'] = $medicos->firstWhere('IdMedico', $turno['IdMedico'])['Especialidad'];
+            if (in_array($turno['MatriculaProfesional'], $arrayIdsMedicos)) {
+                $turno['ApellidoNombre'] = $medicos->firstWhere('MatriculaProfesional', $turno['MatriculaProfesional'])['ApellidoNombre'];
+                $turno['Especialidad'] = $medicos->firstWhere('MatriculaProfesional', $turno['MatriculaProfesional'])['Especialidad'];
             } else {
                 array_push($turnosToRemove, $key);
             }
@@ -179,12 +179,11 @@ class GoogleSheetsController extends Controller
 
         //Registro paciente
         $pacientes = $this->getSheetsData('Pacientes');
-        $paciente = $pacientes->firstWhere('DNI', $datos['dni']);
+        $paciente = $pacientes->firstWhere('DNI', $datos['DNI']);
         if (!$paciente) {
-            $IdPaciente = $pacientes->first() + 1;
+            $IdPaciente = $paciente['DNI'];
             $paciente = [
-                'IdPaciente' => $IdPaciente,
-                'Dni' => $datos['Dni'],
+                'DNI' => $datos['DNI'],
                 'Apellido' => $datos['Apellido'],
                 'Nombre' => $datos['Nombre'],
                 'Telefono' => $datos['Telefono'],
@@ -196,14 +195,14 @@ class GoogleSheetsController extends Controller
               ->sheetById('Pacientes')
               ->append([$paciente]);
         } else {
-            $IdPaciente = $pacientes->firstWhere('DNI', $datos['dni'])['IdPaciente'];
+            $IdPaciente = $pacientes->firstWhere('DNI', $datos['DNI'])['DNI'];
         }
 
         $turnos = $this->getSheetsData('TurnosMedicos')->all();
         foreach ($turnos as $turno) {
             if ((int) $turno['IdTurno'] === (int) $datos['IdTurno']) {
                 $turno['Estado'] = 'Ocupado';
-                $turno['IdPaciente'] = $IdPaciente;
+                $turno['DNI'] = $IdPaciente;
             }
         }
 
@@ -220,7 +219,7 @@ class GoogleSheetsController extends Controller
     //     $datos = $request->all();
     //     $paciente = [
     //       'IdTurno' => 2,
-    //       'DNI' => $datos['dni'],
+    //       'DNI' => $datos['DNI'],
     //       'Apellido' => $datos['apellido'],
     //       'Nombre' => $datos['name'],
     //       'Obra Social' => $datos['obraSocial'],

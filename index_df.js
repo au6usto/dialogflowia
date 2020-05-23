@@ -21,34 +21,40 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
   function postSpreadSheetData(url, data) {
     return axios.post(url, data);
   }
+
+  function getMedicoInfo(medico) {
+    return medico.ApellidoNombre + ' - Obras Sociales: ' + medico.ObrasSociales + ' - Precio Consulta: ' + medico.PrecioConsulta + ' - Horario: ' + medico.Atencion;
+  }
+
+  function getTurnoInfo(turno) {
+    return turno.IdTurno + ' - ' + turno.Fecha + ', ' + turno.HoraInicio + ' - ' + turno.ApellidoNombre;
+  }
+
+  function getPacienteInfo(paciente) {
+    return paciente.Apellido + ', ' + paciente.Nombre + ' - ' + paciente.NroAfiliado;
+  }
   
   function getListadoMedicosDeEspecialidad(agent) {
-    console.log(agent.parameters);
-    // let params = agent.getContext('UsuarioIngresaEspecialidad-followup').parameters;
-    // console.log(params);
-    if (typeof agent.parameters.especialidad !== 'undefined') {
-      
+    if (typeof agent.parameters.especialidad !== 'undefined' && agent.parameters.especialidad !== '') {
+      agent.add('Buscando médicos con Especialidad ' + agent.parameters.especialidad);
       return getSpreadSheetData('http://ia2020.ddns.net/MedicosEspecialidad/' + agent.parameters.especialidad).then( res => {
         if (typeof res.data.data.length !== 'undefined' && res.data.data.length > 0) {
           agent.add('Los médicos disponibles para la especialidad ' + agent.parameters.especialidad + ' son:');
           res.data.data.map(medico => {
-            agent.add(medico.IdMedico + ' - ' + medico.ApellidoNombre + ' - Obras Sociales: ' + medico.ObrasSociales + ' - Precio Consulta: ' + medico.PrecioConsulta + ' - Horario: ' + medico.Atencion);
+            agent.add(getMedicoInfo(medico));
           });
           agent.add('Por favor elija un Médico');
-          return getSpreadSheetData('http://ia2020.ddns.net/MedicosEspecialidad/' + agent.parameters.profesional).then( res => {
-              if (typeof res.data.data.IdMedico !== 'undefined' && res.data.data.IdMedico > 0) {
-                agent.add('Los médicos disponibles para la especialidad ' + agent.parameters.especialidad + ' son:');
-                res.data.data.map(medico => {
-                  agent.add(medico.IdMedico + ' - ' + medico.ApellidoNombre + ' - Obras Sociales: ' + medico.ObrasSociales + ' - Precio Consulta: ' + medico.PrecioConsulta + ' - Horario: ' + medico.Atencion);
-                });
-                agent.add('Por favor elija un Médico');
-                // agent.setContext({ name: 'UsuarioIngresaEspecialidad-FiltraProfesional-followup', parameters: {}});
-              } else {
-                agent.add('No se encontró ningún médico disponible para la especialidad elegida.');
-              }
-            });
+          // return getSpreadSheetData('http://ia2020.ddns.net/Medico/' + agent.parameters.profesional).then( res => {
+          //     if (typeof res.data.data.MatriculaProfesional !== 'undefined' && res.data.data.MatriculaProfesional > 0) {
+          //       agent.add('El médico elegido es:');
+          //       agent.add(getMedicoInfo(res.data.data));
+          //       agent.parameters.MatriculaProfesional = res.data.data.MatriculaProfesional;
+          //     } else {
+          //       agent.add('Eligió un médico incorrecto');
+          //     }
+          //   });
         } else {
-          agent.add('No se encontró ningún médico disponible para la especialidad elegida.');
+          agent.add('No se encontró ningún médico disponible para la especialidad elegida');
         }
       });
     } else {
@@ -56,22 +62,13 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     }
   }
 
-  function getListadoMedicos(agent) {
-    return getSpreadSheetData('http://ia2020.ddns.net/sheet/Medicos').then( res => {
-      	res.data.map(medico => {
-            agent.add(medico.IdMedico + ' - ' + medico.ApellidoNombre + ', ' + medico.Nombre + ' - ' + medico.Atencion);
-        });
-    });
-  }
-
   function getListadoTurnosDeMedico(agent) {
-    return getSpreadSheetData('http://ia2020.ddns.net/Medico/Turnos/' + agent.parameters.IdMedico).then( res => {
-      if (typeof res.data.Apellido !== 'undefined') {
+    return getSpreadSheetData('http://ia2020.ddns.net/Medico/Turnos/' + agent.parameters.MatriculaProfesional).then( res => {
+      if (typeof res.data.data.length !== 'undefined' && res.data.data.length > 0) {
         agent.add('Los turnos disponibles para el médico elegido son: ');
-        res.data.map(turno => {
-          agent.add(turno.IdTurno + ' - ' + turno.Fecha + ', ' + turno.HoraInicio + ' - ' + turno.ApellidoNombre);
+        res.data.data.map(turno => {
+          agent.add(getTurnoInfo(turno));
         });
-        agent.setContext({ name: 'UsuarioEligeFecha-followup', parameters: {}});
       } else {
         agent.add('No se encontró ningún turno disponible para el médico elegido.');
       }
@@ -81,12 +78,11 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
   function getListadoMedicosPorApellido(agent) {
     return getSpreadSheetData('http://ia2020.ddns.net/Medicos/Apellido/' + agent.parameters.Apellido).then( res => {
       let medico = res.data.data;
-      if (typeof res.data.Apellido !== 'undefined') {
+      if (typeof res.data.data.ApellidoNombre !== 'undefined') {
         agent.add('Los turnos disponibles para el Apellido elegido son: ');
-          agent.add(medico.ApellidoNombre  + ' - ' + medico.Especialidad  + ' - Precio Consulta: ' + medico.PrecioConsulta  + ' - Obras Sociales: ' + medico.ObrasSociales  + ' - ' + medico.Atencion);
-          agent.parameters.IdMedico = medico.IdMedico;
+          agent.add(getMedicoInfo(medico));
+          agent.parameters.MatriculaProfesional = medico.MatriculaProfesional;
           agent.parameters.profesional = medico.ApellidoNombre;
-        // agent.setContext({ name: 'IndicaProfesional-followup', parameters: {}});
       } else {
         agent.add('No se encontró ningún médico disponible con el Apellido elegido.');
       }
@@ -95,12 +91,11 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
 
   function getListadoMedicosObraSocial(agent) {
     return getSpreadSheetData('http://ia2020.ddns.net/Medicos/ObraSocial/' + agent.parameters.ObraSocial).then( res => {
-      if (typeof res.data.Apellido !== 'undefined') {
+      if (typeof res.data.data.ApellidoNombre !== 'undefined') {
         agent.add('Los medicos disponibles para la Obra Social elegida son: ');
-        res.data.map(medico => {
-          agent.add(medico.IdMedico + ' - ' + medico.ApellidoNombre + ', ' + medico.Nombre  + ' - ' + medico.Especialidad);
+        res.data.data.map(medico => {
+          agent.add(getMedicoInfo(medico));
         });
-        agent.setContext({ name: 'IndicaProfesional-followup', parameters: {}});
       } else {
         agent.add('No se encontró ningún Médico disponible para la Obra Social elegida.');
       }
@@ -109,12 +104,11 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
 
   function getListadoMedicosFecha(agent) {
     return getSpreadSheetData('http://ia2020.ddns.net/Medicos/Fecha/' + agent.parameters.Fecha).then( res => {
-      if (typeof res.data.Apellido !== 'undefined') {
+      if (typeof res.data.data.ApellidoNombre !== 'undefined') {
         agent.add('Los turnos disponibles para la Fecha elegida son: ');
-        res.data.map(turno => {
-          agent.add(turno.IdTurno + ' - ' + turno.Fecha + ', ' + turno.HoraInicio + ' - ' + turno.ApellidoNombre  + ', ' + turno.Especialidad);
+        res.data.data.map(turno => {
+          agent.add(getTurnoInfo(turno));
         });
-        agent.setContext({ name: 'IndicaProfesional-followup', parameters: {}});
       } else {
         agent.add('No se encontró ningún turno disponible para el médico elegido.');
       }
@@ -122,13 +116,12 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
   }
 
   function getListadoFechasMedico(agent) {
-    return getSpreadSheetData('http://ia2020.ddns.net/Turnos/Fecha/' + agent.parameters.Fecha + '/Medico/' + agent.parameters.IdMedico).then( res => {
-      if (typeof res.data.Apellido !== 'undefined') {
+    return getSpreadSheetData('http://ia2020.ddns.net/Turnos/Fecha/' + agent.parameters.Fecha + '/Medico/' + agent.parameters.MatriculaProfesional).then( res => {
+      if (typeof res.data.data.Apellido !== 'undefined') {
         agent.add('Los turnos disponibles para la Fecha y el Médico elegido son: ');
-        res.data.map(turno => {
-          agent.add(turno.IdTurno + ' - ' + turno.Fecha + ', ' + turno.HoraInicio + ' - ' + turno.ApellidoNombre  + ', ' + turno.Especialidad  + ', ' + turno.PrecioConsulta);
+        res.data.data.map(turno => {
+          agent.add(getTurnoInfo(turno));
         });
-        agent.setContext({ name: 'IndicaProfesional-followup', parameters: {}});
       } else {
         agent.add('No se encontró ningún turno disponible para la Fecha y Médico elegidos.');
       }
@@ -137,9 +130,9 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
 
   function isPacienteExistente(agent) {
     return getSpreadSheetData('http://ia2020.ddns.net/Paciente/' + agent.parameters.number).then( res => {
-      if (typeof res.data.Apellido !== 'undefined') {
+      if (typeof res.data.data.Apellido !== 'undefined') {
         agent.add('¡Muy bien! Sus datos son: ');
-        agent.add(res.data.Apellido + ', ' + res.data.Nombre + ' - ' + res.data.NroAfiliado);
+        agent.add(getPacienteInfo(res.data.data));
         agent.add('Su turno fue registrado con éxito');
         //agent.setContext({ name: 'UsuarioRegistro-followup', parameters: { city: 'Rome' }});
       } else {
@@ -150,11 +143,11 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
 
   function savePaciente(agent) {
     let data = {
-      Dni: agent.parameters.Dni,
+      DNI: agent.parameters.number,
       Apellido: agent.parameters.Apellido,
       Nombre: agent.parameters.Nombre,
       Telefono: agent.parameters.Telefono,
-      Correo: agent.parameters.Correo,
+      Correo: agent.parameters.Correo,  
       ObraSocial: agent.parameters.ObraSocial,
       NroAfiliado: agent.parameters.NroAfiliado,
       IdTurno: agent.parameters.IdTurno
