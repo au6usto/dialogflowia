@@ -161,9 +161,9 @@ class GoogleSheetsController extends Controller
         }
     }
 
-    public function getTurnosFechaEspecialidad(string $fecha, string $especialidad)
+    public function getMedicosFechaEspecialidad(string $fecha, string $especialidad)
     {
-        $cacheId = 'TurnosFechaEspecialidad'. $fecha . $especialidad;
+        $cacheId = 'MedicosFechaEspecialidad'. $fecha . $especialidad;
 
         if (Cache::has($cacheId)) {
             return $this->sendResponse(Cache::get($cacheId), 'Medicos');
@@ -173,22 +173,16 @@ class GoogleSheetsController extends Controller
         $sheetId = 'TurnosMedicos';
         $turnos = $this->getSheetsData($sheetId)
                 ->where('Fecha', $fechaFormateada)
-                // ->where('Especialidad', $especialidad)
                 ->where('Estado', 'Disponible');
-        // dd($turnos);
-        $turnosToRemove = [];
-        foreach ($turnos as $key => $turno) {
-            $medico = $medicos->firstWhere('MatriculaProfesional', $turno['MatriculaProfesional']);
-            if ($this->isEqual($medico['Especialidad'], $especialidad)) {
-                $turno['ApellidoNombre'] = $medico['ApellidoNombre'];
-                $turno['Especialidad'] = $medico['Especialidad'];
-                $turno['PrecioConsulta'] = $medico['PrecioConsulta'];
+        $medicosToRemove = [];
+        foreach ($medicos as $key => $medico) {
+            if ($turnos->firstWhere('MatriculaProfesional', $medico['MatriculaProfesional'] !== null)) {
             } else {
-                array_push($turnosToRemove, $key);
+                array_push($medicosToRemove, $key);
             }
         }
-        Cache::add($cacheId, $turnos->except($turnosToRemove)->values(), 3600);
-        return $this->sendResponse($turnos->except($turnosToRemove)->values(), 'Turnos de Médico');
+        Cache::add($cacheId, $medicos->except($medicosToRemove)->values(), 3600);
+        return $this->sendResponse($medicos->except($medicosToRemove)->values(), 'Médicos de Especialidad y fecha');
     }
 
     public function getTurnosFecha($anio, $mes, $dia)

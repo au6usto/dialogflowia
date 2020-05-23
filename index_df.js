@@ -164,17 +164,20 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
         let url = '';
         if (typeof agent.parameters.especialidad !== 'undefined' && agent.parameters.especialidad !== '' &&
            typeof agent.parameters.date !== 'undefined' && agent.parameters.date !== '') {
-            url = 'Turnos/Fecha/' + agent.parameters.Fecha + '/Especialidad/' + agent.parameters.especialidad;
+            url = 'Medicos/Fecha/' + agent.parameters.date + '/Especialidad/' + agent.parameters.especialidad;
         return getSpreadSheetData(url).then(res => {
             if (typeof res.data.data.length !== 'undefined' && res.data.data.length > 0) {
-                agent.add('Los turnos disponibles para la Fecha ' + agent.parameters.date + ' y la Especialidad  ' + agent.parameters.especialidad + ' son: ');
-                res.data.data.map(turno => {
-                    agent.add(getTurnoInfo(turno));
+                agent.add('Los médicos disponibles para la Fecha ' + agent.parameters.date + ' y la Especialidad  ' + agent.parameters.especialidad + ' son: ');
+                res.data.data.map(medico => {
+                    agent.add(getMedicoInfo(medico));
                 });
+                agent.add('Por favor elija un profesional');
             } else {
-                agent.add('No se encontró ningún turno disponible para la Fecha y Especialidad elegidas.');
+                agent.add('No se encontró ningún médico disponible para la Fecha y Especialidad elegidas.');
             }
         });
+        } else {
+            agent.add('Ingrese nuevamente una Fecha.');
         }
     }
 
