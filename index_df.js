@@ -55,7 +55,21 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     }
 
     function indicaProfesional(agent) {
-        if (typeof agent.parameters.profesional !== 'undefined' && agent.parameters.profesional !== '') {
+        //Si tiene fecha y profesional
+        if (typeof agent.parameters.date !== 'undefined' && agent.parameters.date !== '' && 
+        typeof agent.parameters.profesional !== 'undefined' && agent.parameters.profesional !== '') {
+            return getSpreadSheetData('Turnos/Apellido/' + agent.parameters.profesional + '/Fecha/' + agent.parameters.date).then( res => {
+                 if (typeof res.data.data.length !== 'undefined' && res.data.data.length > 0) {
+                   agent.add('Los turnos disponibles son:');
+                   res.data.data.map(turno => {
+                        agent.add(getTurnoInfo(turno));
+                    });
+                   agent.add('Indique el número de turno que desea elegir');
+                 } else {
+                   agent.add('Eligió un médico incorrecto');
+                 }
+               });
+         } else if (typeof agent.parameters.profesional !== 'undefined' && agent.parameters.profesional !== '') {
            return getSpreadSheetData('Medicos/Apellido/' + agent.parameters.profesional).then( res => {
                 if (typeof res.data.data.MatriculaProfesional !== 'undefined' && res.data.data.MatriculaProfesional > 0) {
                   agent.add('El médico elegido es:');
@@ -72,20 +86,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
                   agent.add('Eligió un médico incorrecto');
                 }
               });
-        } else if (typeof agent.parameters.date !== 'undefined' && agent.parameters.date !== '' && 
-        typeof agent.parameters.profesional !== 'undefined' && agent.parameters.profesional !== '') {
-            return getSpreadSheetData('Turnos/Apellido/' + agent.parameters.profesional + '/Fecha/' + agent.parameters.date).then( res => {
-                 if (typeof res.data.data.length !== 'undefined' && res.data.data.length > 0) {
-                   agent.add('Los turnos disponibles son:');
-                   res.data.data.map(turno => {
-                        agent.add(getTurnoInfo(turno));
-                    });
-                   agent.add('Indique el número de turno que desea elegir');
-                 } else {
-                   agent.add('Eligió un médico incorrecto');
-                 }
-               });
-         } else {
+        } else {
             agent.add('Lo siento, tiene que elegir un profesional');
         }
     }

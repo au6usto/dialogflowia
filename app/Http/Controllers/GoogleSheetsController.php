@@ -165,13 +165,12 @@ class GoogleSheetsController extends Controller
     {
         $cacheId = 'TurnosApellidoFecha'. $apellido . $fecha;
 
-        // if (Cache::has($cacheId)) {
-        //     return $this->sendResponse(Cache::get($cacheId), 'Medicos');
-        // }
+        if (Cache::has($cacheId)) {
+            return $this->sendResponse(Cache::get($cacheId), 'Medicos');
+        }
         $fechaFormateada = \Carbon\Carbon::parse($fecha);
         $medico = $this->getSheetsData('Medicos')->firstWhere('ApellidoNombre', $apellido);
         $sheetId = 'TurnosMedicos';
-        // dd($medico['MatriculaProfesional']);
         $turnos = $this->getSheetsData($sheetId)
                 // ->where('Fecha', $fechaFormateada)
                 ->where('MatriculaProfesional', $medico['MatriculaProfesional'])
@@ -189,7 +188,7 @@ class GoogleSheetsController extends Controller
                 array_push($turnosToRemove, $key);
             }
         }
-        // Cache::add($cacheId, $turnos->except($turnosToRemove)->values(), 3600);
+        Cache::add($cacheId, $turnos->except($turnosToRemove)->values(), 3600);
         return $this->sendResponse($turnos->except($turnosToRemove)->values(), 'Turnos de Médico');
     }
 
