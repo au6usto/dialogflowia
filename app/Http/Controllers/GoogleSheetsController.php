@@ -52,7 +52,6 @@ class GoogleSheetsController extends Controller
         $medicosFiltrados = $medicos->only($medicosConEspecialidad);
         Cache::add('MedicosEspecialidad'. $especialidad, $medicosFiltrados->values(), 3600);
         return $this->sendResponse($medicosFiltrados->values(), 'Medicos de Especialidad');
-        // return $this->sendError('El candidato no posee Función');
     }
 
     public function getTurnosMedico($idMedico)
@@ -65,13 +64,12 @@ class GoogleSheetsController extends Controller
     {
         $sheetId = 'Medicos';
         $medicos = $this->getSheetsData($sheetId);
-        $arrayIdsMedicos = [];
         foreach ($medicos as $medico) {
             if (stripos(preg_replace('/\s+/', '', $medicos['ApellidoNombre']), preg_replace('/\s+/', '', $apellido)) !== false) {
-                array_push($arrayIdsMedicos, $medico['IdMedico']);
+                return $this->sendResponse($medico, 'Medico por Apellido');
             }
         }
-        return $medicos->only($arrayIdsMedicos);
+        return $this->sendError('No se pudo encontrar el médico');
     }
 
     public function getMedicosFecha($fecha)

@@ -29,14 +29,24 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     if (typeof agent.parameters.especialidad !== 'undefined') {
       
       return getSpreadSheetData('http://ia2020.ddns.net/MedicosEspecialidad/' + agent.parameters.especialidad).then( res => {
-        console.log(res.data);
         if (typeof res.data.data.length !== 'undefined' && res.data.data.length > 0) {
           agent.add('Los médicos disponibles para la especialidad ' + agent.parameters.especialidad + ' son:');
           res.data.data.map(medico => {
             agent.add(medico.IdMedico + ' - ' + medico.ApellidoNombre + ' - Obras Sociales: ' + medico.ObrasSociales + ' - Precio Consulta: ' + medico.PrecioConsulta + ' - Horario: ' + medico.Atencion);
           });
           agent.add('Por favor elija un Médico');
-          // agent.setContext({ name: 'UsuarioIngresaEspecialidad-FiltraProfesional-followup', parameters: {}});
+          return getSpreadSheetData('http://ia2020.ddns.net/MedicosEspecialidad/' + agent.parameters.profesional).then( res => {
+              if (typeof res.data.data.IdMedico !== 'undefined' && res.data.data.IdMedico > 0) {
+                agent.add('Los médicos disponibles para la especialidad ' + agent.parameters.especialidad + ' son:');
+                res.data.data.map(medico => {
+                  agent.add(medico.IdMedico + ' - ' + medico.ApellidoNombre + ' - Obras Sociales: ' + medico.ObrasSociales + ' - Precio Consulta: ' + medico.PrecioConsulta + ' - Horario: ' + medico.Atencion);
+                });
+                agent.add('Por favor elija un Médico');
+                // agent.setContext({ name: 'UsuarioIngresaEspecialidad-FiltraProfesional-followup', parameters: {}});
+              } else {
+                agent.add('No se encontró ningún médico disponible para la especialidad elegida.');
+              }
+            });
         } else {
           agent.add('No se encontró ningún médico disponible para la especialidad elegida.');
         }
