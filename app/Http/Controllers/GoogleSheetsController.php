@@ -30,8 +30,19 @@ class GoogleSheetsController extends Controller
 
     public function getPaciente($DNI)
     {
+        $cacheId = 'PacienteDNI'. $DNI;
+        if (Cache::has($cacheId)) {
+            return $this->sendResponse(Cache::get($cacheId), 'Paciente');
+        }
+
         $sheetId = 'Pacientes';
-        return $this->getSheetsData($sheetId)->firstWhere('DNI', $DNI);
+        $paciente = $this->getSheetsData($sheetId)->firstWhere('DNI', $DNI);
+        if (isset($paciente)) {
+            Cache::add($cacheId, $paciente, 3600);
+            return $this->sendResponse($paciente, 'Paciente');
+        }
+        
+        $this->sendError('No se pudo encontrar el Paciente');
     }
 
     public function isEqual($property1, $property2)

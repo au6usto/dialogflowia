@@ -32,7 +32,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     }
 
     function getPacienteInfo(paciente) {
-        return paciente.Apellido + ', ' + paciente.Nombre + ' - ' + paciente.NroAfiliado;
+        return paciente.ApellidoNombre;
     }
     //Intents
     function getListadoMedicosDeEspecialidad(agent) {
@@ -185,10 +185,10 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
         }
     }
 
-    function usuarioEligeTurnoPoseeObraSocial(agent) {
+    function usuarioEligeTurnoPoseeOS(agent) {
         if (typeof agent.parameters.ObraSocial !== 'undefined' && agent.parameters.ObraSocial !== '' && 
         typeof agent.parameters.profesional !== 'undefined' && agent.parameters.profesional !== '') {
-            return getSpreadSheetData('Medico/' + agent.parameters.profesional + '/Medico/' + agent.parameters.ObraSocial).then(res => {
+            return getSpreadSheetData('Medico/' + agent.parameters.profesional + '/ObraSocial/' + agent.parameters.ObraSocial).then(res => {
                 if (res.data.success) {
                     agent.add('Por favor ingrese su DNI');
                 } else {
@@ -256,8 +256,8 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     }
 
     function isPacienteExistente(agent) {
-        return getSpreadSheetData('Paciente/' + agent.parameters.number).then(res => {
-            if (typeof res.data.data.Apellido !== 'undefined') {
+        return getSpreadSheetData('Paciente/' + agent.parameters.dni).then(res => {
+            if (res.data.succes) {
                 agent.add('¡Muy bien! Sus datos son: ');
                 agent.add(getPacienteInfo(res.data.data));
                 agent.add('Su turno fue registrado con éxito');
@@ -265,7 +265,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
                 agent.setContext({ 
                     'name': 'UsuarioRegistro-followup', 
                     'parameters': { 
-                        number : agent.parameters.number 
+                        number : agent.parameters.dni 
                     } 
                 });
             }
@@ -274,7 +274,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
 
     function savePaciente(agent) {
         let data = {
-            DNI: agent.parameters.number,
+            DNI: agent.parameters.dni,
             Apellido: agent.parameters.Apellido,
             Nombre: agent.parameters.Nombre,
             Telefono: agent.parameters.Telefono,
@@ -310,8 +310,8 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     intentMap.set('UsuarioIngresaEspecialidad-FiltraObraSocial-IndicaProfesional', filtraObraSocialIndicaProfesional);
     intentMap.set('UsuarioEligeFecha', usuarioEligeFecha);
     intentMap.set('UsuarioIndicaDNI', isPacienteExistente);
-    intentMap.set('UsuarioEligeturno', usuarioEligeTurno);
-    intentMap.set('UsuarioEligeturno-PoseeObraSocial', usuarioEligeTurnoPoseeObraSocial);
+    intentMap.set('UsuarioEligeTurno', usuarioEligeTurno);
+    intentMap.set('UsuarioEligeTurno-PoseeObraSocial', usuarioEligeTurnoPoseeOS);
     intentMap.set('UsuarioPideTurno', savePaciente);
     intentMap.set('Default Fallback Intent', fallback);
     agent.handleRequest(intentMap);
