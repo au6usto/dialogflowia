@@ -256,18 +256,31 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     }
 
     function isPacienteExistente(agent) {
+        console.log(JSON.stringify(agent.parameters));
         return getSpreadSheetData('Paciente/' + agent.parameters.dni).then(res => {
-            if (res.data.succes) {
-                agent.add('¡Muy bien! Sus datos son: ');
-                agent.add(getPacienteInfo(res.data.data));
-                agent.add('Su turno fue registrado con éxito');
-            } else {
-                agent.setContext({ 
-                    'name': 'UsuarioRegistro-followup', 
-                    'parameters': { 
-                        number : agent.parameters.dni 
-                    } 
+            console.log(JSON.stringify(res.data));
+            if (res.data.success) {
+                let data = {
+                    DNI: agent.parameters.dni,
+                    IdTurno: agent.paramenters.turno
+                };
+                return postSpreadSheetData('Turno', data).then(res => {
+                     if (res.data.success) {
+                        agent.add('¡Perfecto ' + getPacienteInfo(res.data.data) + '!');
+                        agent.add('Su turno ha sido registrado con éxito. Recomiendo anotar la siguiente información para recordarlo el día de la consulta.');
+                        agent.add('Fecha: ' + res.data.Fecha);
+                        agent.add('Hora: ' + res.data.HoraInicio);
+                        agent.add('Dr/a ' + res.data.ApellidoNombre);
+                        agent.add('Lugar: ' + res.data.Direccion);
+                        agent.add('Piso: ' + res.data.Piso);
+                        agent.add('Consultorio: ' + res.data.Consultorio);
+                        agent.add('Turno: ' + res.data.IdTurno);
+                    } else {
+                        agent.add('No se pudo asignar el Turno en este momento. Intente nuevamente');
+                    }
                 });
+            } else {
+                agent.add('He detectado que es su primera vez en la institució. Para poder completar el registro será necesario registrarlo como paciente. Para ello, ingrese los siguietenes datos: Nombre y Apellido completo, teléfono, correo electrónico(opcional)');
             }
         });
     }
@@ -312,7 +325,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     intentMap.set('UsuarioIndicaDNI', isPacienteExistente);
     intentMap.set('UsuarioEligeTurno', usuarioEligeTurno);
     intentMap.set('UsuarioEligeTurno-PoseeObraSocial', usuarioEligeTurnoPoseeOS);
-    intentMap.set('UsuarioPideTurno', savePaciente);
+    intentMap.set('UsuarioRegistro', savePaciente);
     intentMap.set('Default Fallback Intent', fallback);
     agent.handleRequest(intentMap);
 });
