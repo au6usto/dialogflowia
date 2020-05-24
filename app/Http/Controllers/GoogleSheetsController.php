@@ -144,6 +144,16 @@ class GoogleSheetsController extends Controller
         $this->sendError('No se pudo encontrar el turno');
     }
 
+    public function isObraSocialDeMedico(string $apellido, string $obraSocial)
+    {
+        $sheetId = 'Medicos';
+        $medico = $this->getSheetsData($sheetId)
+                ->firstWhere('ApellidoNombre', $apellido);
+        return isset($medico) && $this->isEqual($medico['ObrasSociales'], $obraSocial) ?
+        $this->sendResponse($medico, 'Médico con Obra Social Correcto') :
+        $this->sendError('El médico no posee la Obra Social elegida');
+    }
+
     public function getTurnosFechaMedico($fecha, $MatriculaProfesional = null)
     {
         if (isset($MatriculaProfesional)) {
