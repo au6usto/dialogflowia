@@ -135,10 +135,17 @@ class GoogleSheetsController extends Controller
     public function isTurno($numero)
     {
         $sheetId = 'TurnosMedicos';
+        $cacheId = 'TurnoExiste'. $numero;
+
+        if (Cache::has($cacheId)) {
+            return $this->sendResponse(Cache::get($cacheId), 'Medicos');
+        }
+
         $turno = $this->getSheetsData($sheetId)
                 ->where('IdTurno', $numero)
                 ->where('Estado', 'Disponible')
                 ->first();
+        Cache::add($cacheId, $turno, 3600);
         return isset($turno) ?
         $this->sendResponse($turno, 'Turno Correcto') :
         $this->sendError('No se pudo encontrar el turno');

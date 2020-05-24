@@ -185,6 +185,21 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
         }
     }
 
+    function usuarioEligeTurnoPoseeObraSocial(agent) {
+        if (typeof agent.parameters.ObraSocial !== 'undefined' && agent.parameters.ObraSocial !== '' && 
+        typeof agent.parameters.profesional !== 'undefined' && agent.parameters.profesional !== '') {
+            return getSpreadSheetData('Medico/' + agent.parameters.profesional + '/Medico/' + agent.parameters.ObraSocial).then(res => {
+                if (res.data.success) {
+                    agent.add('Por favor ingrese su DNI');
+                } else {
+                    agent.add('Lo siento, ' + agent.parameters.profesional + ', no trabaja con dicha Obra Social. ¿Desea proseguir con el registro del turno como particular?');
+                }
+            });
+        } else {
+            agent.add('Lo siento, tiene que elegir una Obra Social');
+        }
+    }
+
     // function getListadoMedicosFecha(agent) {
     //     return getSpreadSheetData('Medicos/Fecha/' + agent.parameters.Fecha).then(res => {
     //         if (typeof res.data.data.ApellidoNombre !== 'undefined') {
@@ -296,6 +311,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     intentMap.set('UsuarioEligeFecha', usuarioEligeFecha);
     intentMap.set('UsuarioIndicaDNI', isPacienteExistente);
     intentMap.set('UsuarioEligeturno', usuarioEligeTurno);
+    intentMap.set('UsuarioEligeturno-PoseeObraSocial', usuarioEligeTurnoPoseeObraSocial);
     intentMap.set('UsuarioPideTurno', savePaciente);
     intentMap.set('Default Fallback Intent', fallback);
     agent.handleRequest(intentMap);
