@@ -345,8 +345,7 @@ class GoogleSheetsController extends Controller
         if (!$paciente) {
             $paciente = [
                 'DNI' => $datos['DNI'],
-                'Apellido' => $datos['Apellido'],
-                'Nombre' => $datos['Nombre'],
+                'Apellido' => $datos['ApellidoNombre'],
                 'Telefono' => $datos['Telefono'],
                 'Correo' => $datos['Correo'],
                 'ObraSocial' => $datos['ObraSocial'],

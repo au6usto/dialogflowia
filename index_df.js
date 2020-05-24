@@ -288,8 +288,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     function savePaciente(agent) {
         let data = {
             DNI: agent.parameters.dni,
-            Apellido: agent.parameters.Apellido,
-            Nombre: agent.parameters.Nombre,
+            Apellido: agent.parameters.ApellidoNombre,
             Telefono: agent.parameters.Telefono,
             Correo: agent.parameters.Correo,
             ObraSocial: agent.parameters.ObraSocial,
