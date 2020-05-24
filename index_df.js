@@ -262,7 +262,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
             if (res.data.success) {
                 let data = {
                     DNI: agent.parameters.dni,
-                    IdTurno: agent.paramenters.turno
+                    IdTurno: agent.parameters.turno
                 };
                 return postSpreadSheetData('Turno', data).then(res => {
                      if (res.data.success) {
@@ -288,7 +288,8 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     function savePaciente(agent) {
         let data = {
             DNI: agent.parameters.dni,
-            Apellido: agent.parameters.ApellidoNombre,
+            Apellido: agent.parameters.Apellido,
+            Nombre: agent.parameters.Nombre,
             Telefono: agent.parameters.Telefono,
             Correo: agent.parameters.Correo,
             ObraSocial: agent.parameters.ObraSocial,
