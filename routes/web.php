@@ -22,7 +22,7 @@ Auth::routes();
 Route::get('/sheet/{sheetId}', 'GoogleSheetsController@getSpreadSheet');
 Route::get('/Paciente/{dni}', 'GoogleSheetsController@getPaciente');
 Route::post('/Paciente', 'GoogleSheetsController@storePaciente');
-Route::any('/Turno', 'GoogleSheetsController@storeTurno');
+Route::post('/Turno', 'GoogleSheetsController@storePaciente');
 Route::get('/MedicosEspecialidad/{especialidad}', 'GoogleSheetsController@getMedicosEspecialidad');
 Route::get('/Medicos/Turnos/{idMedico}', 'GoogleSheetsController@getTurnosMedico');
 Route::get('/Turnos/Fecha/{fecha}/Medico/{IdMedico}', 'GoogleSheetsController@getTurnosFechaMedico');
