@@ -75,17 +75,17 @@ class GoogleSheetsController extends Controller
 
     public function getTurnosMedico($MatriculaProfesional)
     {
-        $cacheId = 'TurnosDeMedico'. $MatriculaProfesional;
-        if (Cache::has($cacheId)) {
-            return $this->sendResponse(Cache::get($cacheId), 'Turnos');
-        }
+        // $cacheId = 'TurnosDeMedico'. $MatriculaProfesional;
+        // if (Cache::has($cacheId)) {
+        //     return $this->sendResponse(Cache::get($cacheId), 'Turnos');
+        // }
 
         $sheetId = 'TurnosMedicos';
         $turnos = $this->getSheetsData($sheetId)
             ->where('MatriculaProfesional', $MatriculaProfesional)
             ->where('Estado', 'Disponible')
             ->values();
-        Cache::add($cacheId, $turnos->values(), 3600);
+        // Cache::add($cacheId, $turnos->values(), 3600);
         return $this->sendResponse($turnos, 'Turnos');
     }
 
@@ -124,11 +124,11 @@ class GoogleSheetsController extends Controller
     public function getTurnos($fecha)
     {
         $fechaFormateada = \Carbon\Carbon::parse($fecha)->format('Y-m-d');
-        $cacheId = 'TurnosFecha'. $fecha;
+        // $cacheId = 'TurnosFecha'. $fecha;
 
-        if (Cache::has($cacheId)) {
-            return $this->sendResponse(Cache::get($cacheId), 'Medicos');
-        }
+        // if (Cache::has($cacheId)) {
+        //     return $this->sendResponse(Cache::get($cacheId), 'Medicos');
+        // }
 
         $medicos = $this->getSheetsData('Medicos');
         $sheetId = 'TurnosMedicos';
@@ -140,24 +140,24 @@ class GoogleSheetsController extends Controller
             $turno['Especialidad'] = $medicos->firstWhere('MatriculaProfesional', $turno['MatriculaProfesional'])['Especialidad'];
             $turno['PrecioConsulta'] = $medicos->firstWhere('MatriculaProfesional', $turno['MatriculaProfesional'])['PrecioConsulta'];
         }
-        Cache::add($cacheId, $turnos->values(), 3600);
+        // Cache::add($cacheId, $turnos->values(), 3600);
         return $this->sendResponse($turnos->values(), 'Turnos de Médico');
     }
 
     public function isTurno($numero)
     {
         $sheetId = 'TurnosMedicos';
-        $cacheId = 'TurnoExiste'. $numero;
+        // $cacheId = 'TurnoExiste'. $numero;
 
-        if (Cache::has($cacheId)) {
-            return $this->sendResponse(Cache::get($cacheId), 'Medicos');
-        }
+        // if (Cache::has($cacheId)) {
+        //     return $this->sendResponse(Cache::get($cacheId), 'Medicos');
+        // }
 
         $turno = $this->getSheetsData($sheetId)
                 ->where('IdTurno', $numero)
                 ->where('Estado', 'Disponible')
                 ->first();
-        Cache::add($cacheId, $turno, 3600);
+        // Cache::add($cacheId, $turno, 3600);
         return isset($turno) ?
         $this->sendResponse($turno, 'Turno Correcto') :
         $this->sendError('No se pudo encontrar el turno');
@@ -176,11 +176,11 @@ class GoogleSheetsController extends Controller
     public function getTurnosFechaMedico($fecha, $MatriculaProfesional = null)
     {
         if (isset($MatriculaProfesional)) {
-            $cacheId = 'TurnosMedico'. $fecha . $MatriculaProfesional;
+            // $cacheId = 'TurnosMedico'. $fecha . $MatriculaProfesional;
 
-            if (Cache::has($cacheId)) {
-                return $this->sendResponse(Cache::get($cacheId), 'Medicos');
-            }
+            // if (Cache::has($cacheId)) {
+            //     return $this->sendResponse(Cache::get($cacheId), 'Medicos');
+            // }
             $fechaFormateada = \Carbon\Carbon::parse($fecha)->format('Y-m-d');
             $medicos = $this->getSheetsData('Medicos');
             $sheetId = 'TurnosMedicos';
@@ -195,7 +195,7 @@ class GoogleSheetsController extends Controller
                 $turno['Especialidad'] = $medico['Especialidad'];
                 $turno['PrecioConsulta'] = $medico['PrecioConsulta'];
             }
-            Cache::add($cacheId, $turnos->values(), 3600);
+            // Cache::add($cacheId, $turnos->values(), 3600);
             return $this->sendResponse($turnos->values(), 'Turnos de Médico');
         } else {
             return $this->getTurnos($fecha);
@@ -204,11 +204,11 @@ class GoogleSheetsController extends Controller
 
     public function getTurnosApellidoFecha(string $apellido, string $fecha)
     {
-        $cacheId = 'TurnosApellidoNombreFecha'. $apellido . $fecha;
+        // $cacheId = 'TurnosApellidoNombreFecha'. $apellido . $fecha;
 
-        if (Cache::has($cacheId)) {
-            return $this->sendResponse(Cache::get($cacheId), 'Medicos');
-        }
+        // if (Cache::has($cacheId)) {
+        //     return $this->sendResponse(Cache::get($cacheId), 'Medicos');
+        // }
         $fechaFormateada = \Carbon\Carbon::parse($fecha)->format('Y-m-d');
         $medico = $this->getSheetsData('Medicos')->firstWhere('ApellidoNombre', $apellido);
         $sheetId = 'TurnosMedicos';
@@ -227,7 +227,7 @@ class GoogleSheetsController extends Controller
                 array_push($turnosToRemove, $key);
             }
         }
-        Cache::add($cacheId, $turnos->except($turnosToRemove)->values(), 3600);
+        // Cache::add($cacheId, $turnos->except($turnosToRemove)->values(), 3600);
         return $this->sendResponse($turnos->except($turnosToRemove)->values(), 'Turnos de Médico');
     }
 

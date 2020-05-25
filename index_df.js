@@ -40,10 +40,6 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     function getSpreadSheetData(url) {
         return axios.get(urlService + url);
     }
-    //axios POST
-    function postSpreadSheetData(url, data) {
-        return axios.post(urlService + url, data);
-    }
     //Format Data
     function getMedicoInfo(medico) {
         return medico.ApellidoNombre + ' - Obras Sociales: ' + medico.ObrasSociales + ' - Precio Consulta: ' + medico.PrecioConsulta + ' - Horario: ' + medico.Atencion;
@@ -59,7 +55,6 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
             auth: serviceAccountAuth,
             range: range,
             includeValuesInResponse: true,
-            insertDataOption: "INSERT_ROWS",
             responseDateTimeRenderOption: "FORMATTED_STRING",
             responseValueRenderOption: "UNFORMATTED_VALUE",
             valueInputOption: "RAW",
@@ -69,17 +64,18 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
             sheets.spreadsheets.values.update(sendObject, function (err, response) {
                 if (err) {
                   console.log(err);
-                  return res.status(400).send({
+                  return response.status(400).send({
                     message: errorHandler.getErrorMessage(err)
                   });
                 }
                 console.log(response);
             });
         } else {
+            sendObject.insertDataOption = "INSERT_ROWS";
             sheets.spreadsheets.values.append(sendObject, function (err, response) {
                 if (err) {
                   console.log(err);
-                  return res.status(400).send({
+                  return response.status(400).send({
                     message: errorHandler.getErrorMessage(err)
                   });
                 }
@@ -94,9 +90,6 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
         return turno.IdTurno + ' - ' + turno.Fecha + ', ' + turno.HoraInicio + (profesional ? (' - ' + turno.ApellidoNombre) : '');
     }
 
-    function getPacienteInfo(paciente) {
-        return paciente.ApellidoNombre;
-    }
     //Intents
 	function usuarioPideTurno(agent) {
       	agent.add(`Muy bien. Las especialidades que brindamos en nuestro centro médico son:`);
@@ -309,15 +302,11 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
                      if (res.data.success) {
                         let registro = res.data.data;
                         let values = [
-                        [
-                          ["Ocupado", agent.parameters.dni]
-                        ],
+                          ["Ocupado", agent.parameters.dni+""]
                         ];
                         let range = 'TurnosMedicos!H' + registro.Fila + ':G' + registro.Fila;
-                        console.log(values);
-                        console.log(range);
-                        updateValues(range, values, false);
-                        agent.add('¡Perfecto ' + registro.data.Paciente.ApellidoNombre + '!');
+                        updateValues(range, values);
+                        agent.add('¡Perfecto ' + registro.Paciente + '!');
                         agent.add('Su turno ha sido registrado con éxito. Recomiendo anotar la siguiente información para recordarlo el día de la consulta.');
                         agent.add('Fecha: ' + registro.Fecha);
                         agent.add('Hora: ' + registro.HoraInicio);
@@ -348,31 +337,30 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
         //     IdTurno: agent.parameters.IdTurno
         // };
 
-        let values = [
-            [
-              ["Ocupado", agent.parameters.dni]
-            ],
-        ];
-        let range = 'TurnosMedicos!H' + res.data.data.Fila + ':G' + res.data.data.Fila;
-        console.log(values);
-        console.log(range);
-        updateValues(range, values, false);
-
-        values = [
-            [
-              [agent.parameters.dni, agent.parameters.Apellido + ' ' + agent.parameters.Nombre, agent.parameters.Telefono, agent.parameters.Correo, agent.parameters.ObraSocial, agent.parameters.NroAfiliado]
-            ],
-        ];
-        
-
-        range = 'Pacientes';
-        console.log(values);
-        console.log(range);
-        updateValues(range, body, false);
-
         return getSpreadSheetData('Paciente/' + agent.parameters.dni + '/Turno/' + agent.parameters.turno).then(res => {
             if (res.data.success) {
-                agent.add(`El paciente fue creado y su turno fue asignado correctamente`);
+                let registro = res.data.data;
+                let values = [
+                      ["Ocupado", agent.parameters.dni+""]
+                ];
+                let range = "TurnosMedicos!H" + registro.Fila + ":G" + registro.Fila;
+                updateValues(range, values);
+        
+                values = [
+                      [(agent.parameters.dni+""), agent.parameters['last-name'] + ' ' + agent.parameters['given-name'], (agent.parameters['phone-number']+""), agent.parameters.email, agent.parameters.ObraSocial]
+                ];
+        
+                range = "Pacientes";
+                updateValues(range, values, false);
+                agent.add('¡Perfecto ' + agent.parameters['last-name'] + ' ' + agent.parameters['given-name'] + '!');
+                agent.add('Su turno ha sido registrado con éxito. Recomiendo anotar la siguiente información para recordarlo el día de la consulta.');
+                agent.add('Fecha: ' + registro.Fecha);
+                agent.add('Hora: ' + registro.HoraInicio);
+                agent.add('Dr/a ' + registro.ApellidoNombre);
+                agent.add('Lugar: ' + registro.Direccion);
+                agent.add('Piso: ' + registro.Piso);
+                agent.add('Consultorio: ' + registro.Consultorio);
+                agent.add('Turno: ' + registro.IdTurno);
             } else {
                 agent.add(`No se pudo asignar el turno, intente nuevamente.`);
             }
