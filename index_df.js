@@ -49,8 +49,8 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
         return medico.ApellidoNombre + ' - Obras Sociales: ' + medico.ObrasSociales + ' - Precio Consulta: ' + medico.PrecioConsulta + ' - Horario: ' + medico.Atencion;
     }
 
-    function appendValues(range, values) {
-        sheets.spreadsheets.values.append({
+    function updateValues(range, values, update = true) {
+        let sendObject = {
             spreadsheetId: spreadsheetId,
             auth: serviceAccountAuth,
             range: range,
@@ -60,15 +60,30 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
             responseValueRenderOption: "UNFORMATTED_VALUE",
             valueInputOption: "RAW",
             resource: values
-        }, function (err, response) {
-            if (err) {
-              console.log(err);
-              return res.status(400).send({
-                message: errorHandler.getErrorMessage(err)
-              });
-            }
-            console.log(response);
-        });
+        };
+        if (update) {
+            sheets.spreadsheets.values.update(sendObject, function (err, response) {
+                if (err) {
+                  console.log(err);
+                  return res.status(400).send({
+                    message: errorHandler.getErrorMessage(err)
+                  });
+                }
+                console.log(response);
+            });
+        } else {
+            sheets.spreadsheets.values.append(sendObject, function (err, response) {
+                if (err) {
+                  console.log(err);
+                  return res.status(400).send({
+                    message: errorHandler.getErrorMessage(err)
+                  });
+                }
+                console.log(response);
+            });
+        }
+        
+        
     }
 
     function getTurnoInfo(turno, profesional = true) {
@@ -301,8 +316,9 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
                             values: values
                         };
                         let range = 'TurnosMedicos!H' + res.data.Fila + ':G' + res.data.Fila;
-                        
-                        appendValues('Turnos', body, range);
+                        console.log(values);
+                        console.log(range);
+                        updateValues(range, body, false);
                         agent.add('¡Perfecto ' + getPacienteInfo(res.data.data) + '!');
                         agent.add('Su turno ha sido registrado con éxito. Recomiendo anotar la siguiente información para recordarlo el día de la consulta.');
                         agent.add('Fecha: ' + res.data.Fecha);
@@ -333,6 +349,19 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
             NroAfiliado: agent.parameters.NroAfiliado,
             IdTurno: agent.parameters.IdTurno
         };
+
+        let values = [
+            [
+              ["Ocupado", agent.parameters.dni]
+            ],
+        ];
+        let body = {
+            values: values
+        };
+        let range = 'TurnosMedicos!H' + res.data.Fila + ':G' + res.data.Fila;
+        console.log(values);
+        console.log(range);
+        updateValues(range, body, false);
 
         return postSpreadSheetData('Paciente/', data).then(res => {
             if (res.data.success) {

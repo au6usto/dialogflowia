@@ -342,7 +342,8 @@ class GoogleSheetsController extends Controller
         $datos = $request->all();
 
         //Registro paciente
-        $paciente = $this->getSheetsData('Pacientes')->firstWhere('DNI', $datos['DNI']);
+        $pacientes = $this->getSheetsData('Pacientes');
+        $paciente = $pacientes->firstWhere('DNI', $datos['DNI']);
         $turnoAsignado = null;
         $turnos = $this->getSheetsData('TurnosMedicos');
         foreach ($turnos as $key => $turno) {
@@ -365,7 +366,8 @@ class GoogleSheetsController extends Controller
                 'Piso' => $sede['Piso'],
                 'Consultorio' => $sede['Consultorio'],
                 'IdTurno' => $turno['IdTurno'],
-                'Fila' => $fila
+                'Fila' => $fila,
+                'FilaPacientes' => (count($pacientes) + 1)
             ];
             return $this->sendResponse($datos, 'Turno Asignado');
         }
