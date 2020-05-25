@@ -292,14 +292,6 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
                 };
                 return postSpreadSheetData('Turno', data).then(res => {
                      if (res.data.success) {
-                    //     values: [
-                    //         ["Item", "Cost", "Stocked", "Ship Date"],
-                    //         ["Wheel", "$20.50", "4", "3/1/2016"],
-                    //         ["Door", "$15", "2", "3/15/2016"],
-                    //         ["Engine", "$100", "1", "3/20/2016"],
-                    //         ["Totals", "=SUM(B2:B4)", "=SUM(C2:C4)", "=MAX(D2:D4)"]
-                    //   ]
-
                         let values = [
                         [
                           ["Ocupado", agent.parameters.dni]
@@ -308,7 +300,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
                         let body = {
                             values: values
                         };
-                        let range = 'Turnos!H' + res.data.Fila + ':G' + res.data.Fila;
+                        let range = 'TurnosMedicos!H' + res.data.Fila + ':G' + res.data.Fila;
                         
                         appendValues('Turnos', body, range);
                         agent.add('¡Perfecto ' + getPacienteInfo(res.data.data) + '!');
