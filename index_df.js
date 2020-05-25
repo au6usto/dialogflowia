@@ -6,12 +6,34 @@ const functions = require('firebase-functions');
 const { WebhookClient } = require('dialogflow-fulfillment');
 const { Card, Suggestion } = require('dialogflow-fulfillment');
 const axios = require('axios');
+const { google } = require('googleapis');
+
 
 process.env.DEBUG = 'dialogflow:debug'; // enables lib debugging statements
+process.env.DEBUG = 'dialogflow:*'; // It enables lib debugging statements
+
+// JSON otorgado cuando se crea la credencial
+// en google platform al configurar la API de 
+// google calendar
+const serviceAccount = {};
+
+const spreadsheetId = "1xaORRQBAxi4Mly_9yccQvgc2KBVpdMWAJTRBkcXRrMI";
+
+
+// Set up Google Calendar service account credentials
+const serviceAccountAuth = new google.auth.JWT({
+    email: serviceAccount.client_email,
+    key: serviceAccount.private_key,
+    scopes: 'https://www.googleapis.com/auth/spreadsheets'
+});
+
+const sheets = google.sheets('v4');
 
 exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, response) => {
     const agent = new WebhookClient({ request, response });
-
+	
+  
+ 
     const urlService = 'http://ia2020.ddns.net/';
 
     //axios GET
@@ -27,6 +49,28 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
         return medico.ApellidoNombre + ' - Obras Sociales: ' + medico.ObrasSociales + ' - Precio Consulta: ' + medico.PrecioConsulta + ' - Horario: ' + medico.Atencion;
     }
 
+    function appendValues(range, values) {
+        sheets.spreadsheets.values.append({
+            spreadsheetId: spreadsheetId,
+            auth: serviceAccountAuth,
+            range: range,
+            includeValuesInResponse: true,
+            insertDataOption: "INSERT_ROWS",
+            responseDateTimeRenderOption: "FORMATTED_STRING",
+            responseValueRenderOption: "UNFORMATTED_VALUE",
+            valueInputOption: "RAW",
+            resource: values
+        }, function (err, response) {
+            if (err) {
+              console.log(err);
+              return res.status(400).send({
+                message: errorHandler.getErrorMessage(err)
+              });
+            }
+            console.log(response);
+        });
+    }
+
     function getTurnoInfo(turno, profesional = true) {
         return turno.IdTurno + ' - ' + turno.Fecha + ', ' + turno.HoraInicio + (profesional ? (' - ' + turno.ApellidoNombre) : '');
     }
@@ -35,7 +79,15 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
         return paciente.ApellidoNombre;
     }
     //Intents
-
+	function usuarioPideTurno(agent) {
+      	agent.add(`Muy bien. Las especialidades que brindamos en nuestro centro médico son:`);
+      	agent.add(new Suggestion(`Clínico`));
+     	agent.add(new Suggestion(`Nutrición`));
+      	agent.add(new Suggestion(`Psicología`));
+      	agent.add(new Suggestion(`Urología`));
+      	agent.add(`¿Cuál de ellas desea consultar?`);
+    }
+  
     function usuarioIngresaEspecialidad(agent) {
         agent.add(`Muy bien. Por favor, indique a continuación uno de los siguientes parámetros de búsqueda:`);
         agent.add(`- nombre y/o apellido del especialista al que desea consultar`);
@@ -145,19 +197,6 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
         }
     }
 
-    // function getListadoTurnosDeMedico(agent) {
-    //     return getSpreadSheetData('Medicos/Turnos/' + agent.parameters.MatriculaProfesional).then(res => {
-    //         if (typeof res.data.data.length !== 'undefined' && res.data.data.length > 0) {
-    //             agent.add('Los turnos disponibles para el médico elegido son: ');
-    //             res.data.data.map(turno => {
-    //                 agent.add(getTurnoInfo(turno));
-    //             });
-    //         } else {
-    //             agent.add('No se encontró ningún turno disponible para el médico elegido.');
-    //         }
-    //     });
-    // }
-
     function getListadoMedicosPorApellido(agent) {
         if (typeof agent.parameters.profesional !== 'undefined' && agent.parameters.profesional !== '') {
             return getSpreadSheetData('Medicos/Apellido/' + agent.parameters.profesional).then(res => {
@@ -223,40 +262,6 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
         }
     }
 
-    // function getListadoMedicosFecha(agent) {
-    //     return getSpreadSheetData('Medicos/Fecha/' + agent.parameters.Fecha).then(res => {
-    //         if (typeof res.data.data.ApellidoNombre !== 'undefined') {
-    //             agent.add('Los turnos disponibles para la Fecha elegida son: ');
-    //             res.data.data.map(turno => {
-    //                 agent.add(getTurnoInfo(turno));
-    //             });
-    //         } else {
-    //             agent.add('No se encontró ningún turno disponible para el médico elegido.');
-    //         }
-    //     });
-    // }
-
-    // function getTurnosFechasMedico(agent) {
-    //     let url = '';
-    //     if (typeof agent.parameters.MatriculaProfesional !== 'undefined' && agent.parameters.MatriculaProfesional !== '' && agent.parameters.MatriculaProfesional !== 'MatriculaProfesional') {
-    //         url = 'Turnos/Fecha/' + agent.parameters.Fecha + '/Medico/' + agent.parameters.MatriculaProfesional;
-    //     } else {
-    //         url = 'Turnos/Fecha/' + agent.parameters.Fecha;
-    //     }
-
-    //     agent.add(url);
-    //     return getSpreadSheetData(url).then(res => {
-    //         if (typeof res.data.data.length !== 'undefined' && res.data.data.length > 0) {
-    //             agent.add('Los turnos disponibles para la Fecha y el Médico elegido son: ');
-    //             res.data.data.map(turno => {
-    //                 agent.add(getTurnoInfo(turno));
-    //             });
-    //         } else {
-    //             agent.add('No se encontró ningún turno disponible para la Fecha y Médico elegidos.');
-    //         }
-    //     });
-    // }
-  
   function getListadoFechasMedico(agent) {
         let url = '';
         if (typeof agent.parameters.especialidad !== 'undefined' && agent.parameters.especialidad !== '' &&
@@ -279,9 +284,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     }
 
     function isPacienteExistente(agent) {
-        console.log(JSON.stringify(agent.parameters));
         return getSpreadSheetData('Paciente/' + agent.parameters.dni).then(res => {
-            console.log(JSON.stringify(res.data));
             if (res.data.success) {
                 let data = {
                     DNI: agent.parameters.dni,
@@ -289,6 +292,25 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
                 };
                 return postSpreadSheetData('Turno', data).then(res => {
                      if (res.data.success) {
+                    //     values: [
+                    //         ["Item", "Cost", "Stocked", "Ship Date"],
+                    //         ["Wheel", "$20.50", "4", "3/1/2016"],
+                    //         ["Door", "$15", "2", "3/15/2016"],
+                    //         ["Engine", "$100", "1", "3/20/2016"],
+                    //         ["Totals", "=SUM(B2:B4)", "=SUM(C2:C4)", "=MAX(D2:D4)"]
+                    //   ]
+
+                        let values = [
+                        [
+                          ["Ocupado", agent.parameters.dni]
+                        ],
+                        ];
+                        let body = {
+                            values: values
+                        };
+                        let range = 'Turnos!H' + res.data.Fila + ':G' + res.data.Fila;
+                        
+                        appendValues('Turnos', body, range);
                         agent.add('¡Perfecto ' + getPacienteInfo(res.data.data) + '!');
                         agent.add('Su turno ha sido registrado con éxito. Recomiendo anotar la siguiente información para recordarlo el día de la consulta.');
                         agent.add('Fecha: ' + res.data.Fecha);
@@ -337,6 +359,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
 
     // Run the proper function handler based on the matched Dialogflow intent name
     let intentMap = new Map();
+  	intentMap.set('UsuarioPideTurno', usuarioPideTurno);
     intentMap.set('UsuarioIngresaEspecialidad', usuarioIngresaEspecialidad);
     intentMap.set('UsuarioIngresaEspecialidad-ListadoCompleto', getListadoMedicosDeEspecialidad);
     intentMap.set('UsuarioIngresaEspecialidad-ListadoCompleto-IndicaProfesional', listadoCompletoIndicaProfesional);
