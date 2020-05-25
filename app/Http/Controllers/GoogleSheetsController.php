@@ -353,17 +353,17 @@ class GoogleSheetsController extends Controller
         }
 
         if (isset($turnoAsignado)) {
-            $medico = $this->getSheetsData('Medicos')->firstWhere('MatriculaProfesional', $turno['MatriculaProfesional']);
-            $sede = $this->getSheetsData('Sedes')->firstWhere('IdSede', $turno['IdSede']);
+            $medico = $this->getSheetsData('Medicos')->firstWhere('MatriculaProfesional', $turnoAsignado['MatriculaProfesional']);
+            $sede = $this->getSheetsData('Sedes')->firstWhere('IdSede', $turnoAsignado['IdSede']);
             $datos = [
-                'Paciente' => (isset($paciente) ? true : false),
-                'Fecha' => $turno['Fecha'],
-                'HoraInicio' => $turno['HoraInicio'],
+                'Paciente' => (isset($paciente) ? $paciente['ApellidoNombre'] : false),
+                'Fecha' => $turnoAsignado['Fecha'],
+                'HoraInicio' => $turnoAsignado['HoraInicio'],
                 'ApellidoNombre' => $medico['ApellidoNombre'],
                 'Direccion' => $sede['Direccion'],
                 'Piso' => $sede['Piso'],
                 'Consultorio' => $sede['Consultorio'],
-                'IdTurno' => $turno['IdTurno'],
+                'IdTurno' => $turnoAsignado['IdTurno'],
                 'Fila' => $fila
             ];
             return $this->sendResponse($datos, 'Turno Asignado');

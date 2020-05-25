@@ -50,6 +50,10 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     }
 
     function updateValues(range, values, update = true) {
+        let body = {
+            values: values
+        };
+
         let sendObject = {
             spreadsheetId: spreadsheetId,
             auth: serviceAccountAuth,
@@ -59,7 +63,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
             responseDateTimeRenderOption: "FORMATTED_STRING",
             responseValueRenderOption: "UNFORMATTED_VALUE",
             valueInputOption: "RAW",
-            resource: values
+            resource: body
         };
         if (update) {
             sheets.spreadsheets.values.update(sendObject, function (err, response) {
@@ -303,27 +307,25 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
             if (res.data.success) {
                 return getSpreadSheetData('Paciente/' + agent.parameters.dni + '/Turno/' + agent.parameters.turno).then(res => {
                      if (res.data.success) {
+                        let registro = res.data.data;
                         let values = [
                         [
                           ["Ocupado", agent.parameters.dni]
                         ],
                         ];
-                        let body = {
-                            values: values
-                        };
-                        let range = 'TurnosMedicos!H' + res.data.Fila + ':G' + res.data.Fila;
+                        let range = 'TurnosMedicos!H' + registro.Fila + ':G' + registro.Fila;
                         console.log(values);
                         console.log(range);
-                        updateValues(range, body, false);
-                        agent.add('¡Perfecto ' + getPacienteInfo(res.data.data) + '!');
+                        updateValues(range, values, false);
+                        agent.add('¡Perfecto ' + registro.data.Paciente.ApellidoNombre + '!');
                         agent.add('Su turno ha sido registrado con éxito. Recomiendo anotar la siguiente información para recordarlo el día de la consulta.');
-                        agent.add('Fecha: ' + res.data.Fecha);
-                        agent.add('Hora: ' + res.data.HoraInicio);
-                        agent.add('Dr/a ' + res.data.ApellidoNombre);
-                        agent.add('Lugar: ' + res.data.Direccion);
-                        agent.add('Piso: ' + res.data.Piso);
-                        agent.add('Consultorio: ' + res.data.Consultorio);
-                        agent.add('Turno: ' + res.data.IdTurno);
+                        agent.add('Fecha: ' + registro.Fecha);
+                        agent.add('Hora: ' + registro.HoraInicio);
+                        agent.add('Dr/a ' + registro.ApellidoNombre);
+                        agent.add('Lugar: ' + registro.Direccion);
+                        agent.add('Piso: ' + registro.Piso);
+                        agent.add('Consultorio: ' + registro.Consultorio);
+                        agent.add('Turno: ' + registro.IdTurno);
                     } else {
                         agent.add('No se pudo asignar el Turno en este momento. Intente nuevamente');
                     }
@@ -351,22 +353,17 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
               ["Ocupado", agent.parameters.dni]
             ],
         ];
-        let body = {
-            values: values
-        };
-        let range = 'TurnosMedicos!H' + res.data.Fila + ':G' + res.data.Fila;
+        let range = 'TurnosMedicos!H' + res.data.data.Fila + ':G' + res.data.data.Fila;
         console.log(values);
         console.log(range);
-        updateValues(range, body, false);
+        updateValues(range, values, false);
 
         values = [
             [
               [agent.parameters.dni, agent.parameters.Apellido + ' ' + agent.parameters.Nombre, agent.parameters.Telefono, agent.parameters.Correo, agent.parameters.ObraSocial, agent.parameters.NroAfiliado]
             ],
         ];
-        body = {
-            values: values
-        };
+        
 
         range = 'Pacientes';
         console.log(values);
