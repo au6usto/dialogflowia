@@ -337,18 +337,16 @@ class GoogleSheetsController extends Controller
         return $turnos->except($turnosToRemove);
     }
 
-    public function storePaciente(Request $request)
+    public function storePaciente($dni, $idTurno)
     {
-        $datos = $request->all();
-
         //Registro paciente
         $pacientes = $this->getSheetsData('Pacientes');
-        $paciente = $pacientes->firstWhere('DNI', $datos['DNI']);
+        $paciente = $pacientes->firstWhere('DNI', $dni);
         $turnoAsignado = null;
         $turnos = $this->getSheetsData('TurnosMedicos');
         foreach ($turnos as $key => $turno) {
-            if ((int) $turno['IdTurno'] === (int) $datos['IdTurno']) {
-                $fila = count($turnos) - $key;
+            if ((int) $turno['IdTurno'] === (int) $idTurno) {
+                $fila = $key + 1;
                 $turnoAsignado = $turno;
                 break;
             }
@@ -366,8 +364,7 @@ class GoogleSheetsController extends Controller
                 'Piso' => $sede['Piso'],
                 'Consultorio' => $sede['Consultorio'],
                 'IdTurno' => $turno['IdTurno'],
-                'Fila' => $fila,
-                'FilaPacientes' => (count($pacientes) + 1)
+                'Fila' => $fila
             ];
             return $this->sendResponse($datos, 'Turno Asignado');
         }

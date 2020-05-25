@@ -20,9 +20,8 @@ Route::get('/', function () {
 Auth::routes();
 
 Route::get('/sheet/{sheetId}', 'GoogleSheetsController@getSpreadSheet');
+Route::get('/Paciente/{dni}/Turno/{IdTurno}', 'GoogleSheetsController@storePaciente');
 Route::get('/Paciente/{dni}', 'GoogleSheetsController@getPaciente');
-Route::post('/Paciente', 'GoogleSheetsController@storePaciente');
-Route::post('Turno', 'GoogleSheetsController@storePaciente')->name('Turno');
 Route::get('/MedicosEspecialidad/{especialidad}', 'GoogleSheetsController@getMedicosEspecialidad');
 Route::get('/Medicos/Turnos/{idMedico}', 'GoogleSheetsController@getTurnosMedico');
 Route::get('/Turnos/Fecha/{fecha}/Medico/{IdMedico}', 'GoogleSheetsController@getTurnosFechaMedico');
@@ -37,4 +36,3 @@ Route::get('/Medicos/Apellido/{apellido}', 'GoogleSheetsController@getMedicosApe
 Route::get('/Turnos/ObraSocial/{obraSocial}', 'GoogleSheetsController@getTurnosObraSocial');
 Route::get('/Turno/{IdTurno}', 'GoogleSheetsController@isTurno');
 Route::get('/home', 'HomeController@index')->name('home');
-Route::get('/regg', 'GoogleSheetsController@regg');

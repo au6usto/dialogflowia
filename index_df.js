@@ -301,11 +301,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     function isPacienteExistente(agent) {
         return getSpreadSheetData('Paciente/' + agent.parameters.dni).then(res => {
             if (res.data.success) {
-                let data = {
-                    DNI: agent.parameters.dni,
-                    IdTurno: agent.parameters.turno
-                };
-                return postSpreadSheetData('Turno', data).then(res => {
+                return getSpreadSheetData('Paciente/' + agent.parameters.dni + '/Turno/' + agent.parameters.turno).then(res => {
                      if (res.data.success) {
                         let values = [
                         [
@@ -333,22 +329,22 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
                     }
                 });
             } else {
-                agent.add('He detectado que es su primera vez en la institució. Para poder completar el registro será necesario registrarlo como paciente. Para ello, ingrese los siguietenes datos: Nombre y Apellido completo, teléfono, correo electrónico(opcional)');
+                agent.add('He detectado que es su primera vez en la institución. Para poder completar el registro será necesario registrarlo como paciente. Para ello, ingrese los siguietenes datos: Nombre y Apellido completo, teléfono, correo electrónico(opcional)');
             }
         });
     }
 
     function savePaciente(agent) {
-        let data = {
-            DNI: agent.parameters.dni,
-            Apellido: agent.parameters.Apellido,
-            Nombre: agent.parameters.Nombre,
-            Telefono: agent.parameters.Telefono,
-            Correo: agent.parameters.Correo,
-            ObraSocial: agent.parameters.ObraSocial,
-            NroAfiliado: agent.parameters.NroAfiliado,
-            IdTurno: agent.parameters.IdTurno
-        };
+        // let data = {
+        //     DNI: agent.parameters.dni,
+        //     Apellido: agent.parameters.Apellido,
+        //     Nombre: agent.parameters.Nombre,
+        //     Telefono: agent.parameters.Telefono,
+        //     Correo: agent.parameters.Correo,
+        //     ObraSocial: agent.parameters.ObraSocial,
+        //     NroAfiliado: agent.parameters.NroAfiliado,
+        //     IdTurno: agent.parameters.IdTurno
+        // };
 
         let values = [
             [
@@ -363,7 +359,21 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
         console.log(range);
         updateValues(range, body, false);
 
-        return postSpreadSheetData('Paciente/', data).then(res => {
+        values = [
+            [
+              [agent.parameters.dni, agent.parameters.Apellido + ' ' + agent.parameters.Nombre, agent.parameters.Telefono, agent.parameters.Correo, agent.parameters.ObraSocial, agent.parameters.NroAfiliado]
+            ],
+        ];
+        body = {
+            values: values
+        };
+
+        range = 'Pacientes';
+        console.log(values);
+        console.log(range);
+        updateValues(range, body, false);
+
+        return getSpreadSheetData('Paciente/' + agent.parameters.dni + '/Turno/' + agent.parameters.turno).then(res => {
             if (res.data.success) {
                 agent.add(`El paciente fue creado y su turno fue asignado correctamente`);
             } else {
