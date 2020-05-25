@@ -37,3 +37,4 @@ Route::get('/Medicos/Apellido/{apellido}', 'GoogleSheetsController@getMedicosApe
 Route::get('/Turnos/ObraSocial/{obraSocial}', 'GoogleSheetsController@getTurnosObraSocial');
 Route::get('/Turno/{IdTurno}', 'GoogleSheetsController@isTurno');
 Route::get('/home', 'HomeController@index')->name('home');
+Route::get('/regg', 'GoogleSheetsController@regg');

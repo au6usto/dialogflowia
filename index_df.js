@@ -27,14 +27,23 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
         return medico.ApellidoNombre + ' - Obras Sociales: ' + medico.ObrasSociales + ' - Precio Consulta: ' + medico.PrecioConsulta + ' - Horario: ' + medico.Atencion;
     }
 
-    function getTurnoInfo(turno) {
-        return turno.IdTurno + ' - ' + turno.Fecha + ', ' + turno.HoraInicio + ' - ' + turno.ApellidoNombre;
+    function getTurnoInfo(turno, profesional = true) {
+        return turno.IdTurno + ' - ' + turno.Fecha + ', ' + turno.HoraInicio + (profesional ? (' - ' + turno.ApellidoNombre) : '');
     }
 
     function getPacienteInfo(paciente) {
         return paciente.ApellidoNombre;
     }
     //Intents
+
+    function usuarioIngresaEspecialidad(agent) {
+        agent.add(`Muy bien. Por favor, indique a continuación uno de los siguientes parámetros de búsqueda:`);
+        agent.add(`- nombre y/o apellido del especialista al que desea consultar`);
+        agent.add(`- fecha especifica para visualizar los especialistas que poseen turnos disponibles en la misma`);
+        agent.add(`- obra social que posee para visualizar los especialistas que trabajan con ella`);
+        agent.add(`- solicitar consultar el listado completo de especialistas que trabajan en la misma.`);
+    }
+
     function getListadoMedicosDeEspecialidad(agent) {
         if (typeof agent.parameters.especialidad !== 'undefined' && agent.parameters.especialidad !== '') {
             agent.add('Buscando médicos con Especialidad ' + agent.parameters.especialidad);
@@ -99,26 +108,40 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     }
 
     function usuarioEligeFecha(agent) {
-        return filtraFechaIndicaProfesional(agent);
-    }
-
-    function filtraObraSocialIndicaProfesional(agent) {
-        //Si tiene Obra Social y Especialidad
-        if (typeof agent.parameters.ObraSocial !== 'undefined' && agent.parameters.ObraSocial !== '' && 
-        typeof agent.parameters.especialidad !== 'undefined' && agent.parameters.especialidad !== '') {
-            return getSpreadSheetData('Medicos/ObraSocial/' + agent.parameters.ObraSocial + '/Especialidad/' + agent.parameters.especialidad).then( res => {
+        //Si tiene fecha y profesional
+        if (typeof agent.parameters.date !== 'undefined' && agent.parameters.date !== '' && 
+        typeof agent.parameters.profesional !== 'undefined' && agent.parameters.profesional !== '') {
+            return getSpreadSheetData('Turnos/Apellido/' + agent.parameters.profesional + '/Fecha/' + agent.parameters.date).then( res => {
                  if (typeof res.data.data.length !== 'undefined' && res.data.data.length > 0) {
-                   agent.add('Los médicos disponibles son:');
-                   res.data.data.map(medico => {
-                        agent.add(getMedicoInfo(medico));
+                   agent.add('Los turnos disponibles son:');
+                   res.data.data.map(turno => {
+                        agent.add(getTurnoInfo(turno, false));
                     });
-                   agent.add('Por favor elija un médico');
+                   agent.add('¿Desea solicitar alguno de los turnos previamente mencionados?');
                  } else {
                    agent.add('Eligió un médico incorrecto');
                  }
                });
          } else {
             agent.add('Lo siento, tiene que elegir un profesional');
+        }
+    }
+
+    function filtraObraSocialIndicaProfesional(agent) {
+        //Si tiene Obra Social y Especialidad
+        if (typeof agent.parameters.ObraSocial !== 'undefined' && agent.parameters.ObraSocial !== '' && 
+        typeof agent.parameters.profesional !== 'undefined' && agent.parameters.profesional !== '') {
+            return getSpreadSheetData('Medico/' + agent.parameters.profesional + '/ObraSocial/' + agent.parameters.ObraSocial).then( res => {
+                 if (res.data.success) {
+                   agent.add('Los datos de médico son:');
+                    agent.add(getMedicoInfo(res.data.data));
+                   agent.add('Elija el día que desea consultar');
+                 } else {
+                   agent.add('Eligió un médico incorrecto');
+                 }
+               });
+         } else {
+            agent.add('Lo siento, tiene que elegir un Profesional y una Obra Social');
         }
     }
 
@@ -143,7 +166,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
                     agent.add('Los datos del médico son los siguientes: ');
                     agent.add(getMedicoInfo(medico));
                     agent.add('Ok. A continuación, indique el día a consultar que le resultara más conveniente.');
-                    agent.setContext({ 'name': 'UsuarioEligioProfesional', 'parameters': { 'MatriculaProfesional' : medico.MatriculaProfesional } });
+                    // agent.setContext({ 'name': 'UsuarioEligioProfesional', 'parameters': { 'MatriculaProfesional' : medico.MatriculaProfesional } });
                 } else {
                     agent.add('No se encontró ningún médico disponible con el Apellido elegido.');
                 }
@@ -196,7 +219,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
                 }
             });
         } else {
-            agent.add('Lo siento, tiene que elegir una Obra Social');
+            agent.add('Lo siento, tiene que elegir una Obra Social y un profesional');
         }
     }
 
@@ -314,6 +337,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
 
     // Run the proper function handler based on the matched Dialogflow intent name
     let intentMap = new Map();
+    intentMap.set('UsuarioIngresaEspecialidad', usuarioIngresaEspecialidad);
     intentMap.set('UsuarioIngresaEspecialidad-ListadoCompleto', getListadoMedicosDeEspecialidad);
     intentMap.set('UsuarioIngresaEspecialidad-ListadoCompleto-IndicaProfesional', listadoCompletoIndicaProfesional);
     intentMap.set('UsuarioIngresaEspecialidad-FiltraFecha-IndicaProfesional', filtraFechaIndicaProfesional);

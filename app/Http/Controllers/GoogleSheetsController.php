@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Google;
 use Sheets;
 use Illuminate\Support\Facades\Cache;
 
@@ -20,7 +21,7 @@ class GoogleSheetsController extends Controller
 
         $rows = Sheets::collection($header, $sheets);
 
-        return $rows->reverse()->take(200);
+        return $rows->reverse()->take(168);
     }
 
     public function getSpreadSheet($sheetId)
@@ -386,6 +387,60 @@ class GoogleSheetsController extends Controller
             return $this->sendResponse($datos, 'Turno Asignado');
         }
         return $this->sendError('No se pudo asignar el turno');
+    }
+
+    public function regg()
+    {
+        //Registro paciente
+        // $paciente = null;
+        // if (!$paciente) {
+        Sheets::setService(Google::make('sheets'));
+        $excel = Sheets::spreadsheet($this->spreadSheetId)
+        ->sheet('Sheet7')
+        ->append([['3', 'name3', 'mail3']]);
+        // dd($excel);
+        // $excel->append([[
+        //     'DNI' => 'DNI',
+        // 'Apellido' => 'ApellidoNombre',
+        // 'Telefono' => 'Telefono',
+        // 'Correo' => 'Correo',
+        // 'ObraSocial' => 'ObraSocial',
+        // 'NroAfiliado' => 'NroAfiliado',
+        // ]]);
+        // $values = Sheets::all();
+        // }
+        return $this->sendResponse($excel, 'paciente Asignado');
+
+        // $turnoAsignado = null;
+    // $turnos = $this->getSheetsData('TurnosMedicos');
+    // foreach ($turnos as $turno) {
+    //     if ((int) $turno['IdTurno'] === (int) $datos['IdTurno']) {
+    //         $turno['Estado'] = 'Ocupado';
+    //         $turno['DNI'] = $paciente['DNI'];
+    //         $turnoAsignado = $turno;
+    //     }
+    // }
+
+    // if (isset($turnoAsignado)) {
+    //     //registro turno
+    //     Sheets::spreadsheet($this->spreadSheetId)
+    //         ->sheetById('TurnosMedicos')
+    //         ->update([$turnos]);
+
+    //     $medico = $this->getSheetsData('Medicos')->firstWhere('MatriculaProfesional', $turno['MatriculaProfesional']);
+    //     $sede = $this->getSheetsData('Sedes')->firstWhere('IdSede', $turno['IdSede']);
+    //     $datos = [
+    //             'Fecha' => $turno['Fecha'],
+    //             'HoraInicio' => $turno['HoraInicio'],
+    //             'ApellidoNombre' => $medico['ApellidoNombre'],
+    //             'Direccion' => $sede['Direccion'],
+    //             'Piso' => $sede['Piso'],
+    //             'Consultorio' => $sede['Consultorio'],
+    //             'IdTurno' => $turno['IdTurno'],
+    //         ];
+    //     return $this->sendResponse($datos, 'Turno Asignado');
+    // }
+    // return $this->sendError('No se pudo asignar el turno');
     }
 
     // public function appendDataSheet(Request $request)
