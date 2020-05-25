@@ -302,7 +302,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
                      if (res.data.success) {
                         let registro = res.data.data;
                         let values = [
-                          ["Ocupado", agent.parameters.dni+""]
+                          ["Ocupado", agent.parameters.dni]
                         ];
                         let range = 'TurnosMedicos!H' + registro.Fila + ':G' + registro.Fila;
                         updateValues(range, values);
@@ -315,6 +315,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
                         agent.add('Piso: ' + registro.Piso);
                         agent.add('Consultorio: ' + registro.Consultorio);
                         agent.add('Turno: ' + registro.IdTurno);
+                        agent.add('¿Puedo ayudarte en algo más?');
                     } else {
                         agent.add('No se pudo asignar el Turno en este momento. Intente nuevamente');
                     }
@@ -341,13 +342,13 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
             if (res.data.success) {
                 let registro = res.data.data;
                 let values = [
-                      ["Ocupado", agent.parameters.dni+""]
+                      ["Ocupado", agent.parameters.dni]
                 ];
                 let range = "TurnosMedicos!H" + registro.Fila + ":G" + registro.Fila;
                 updateValues(range, values);
         
                 values = [
-                      [(agent.parameters.dni+""), agent.parameters['last-name'] + ' ' + agent.parameters['given-name'], (agent.parameters['phone-number']+""), agent.parameters.email, agent.parameters.ObraSocial]
+                      [(agent.parameters.dni), agent.parameters['last-name'] + ' ' + agent.parameters['given-name'], (agent.parameters['phone-number']), agent.parameters.email, agent.parameters.ObraSocial]
                 ];
         
                 range = "Pacientes";
@@ -361,6 +362,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
                 agent.add('Piso: ' + registro.Piso);
                 agent.add('Consultorio: ' + registro.Consultorio);
                 agent.add('Turno: ' + registro.IdTurno);
+                agent.add('¿Puedo ayudarte en algo más?');
             } else {
                 agent.add(`No se pudo asignar el turno, intente nuevamente.`);
             }
