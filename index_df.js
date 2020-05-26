@@ -94,7 +94,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     }
 
     function getTurnoInfo(turno, profesional = true, suggestion = false) {
-        return `${(suggestion ? new Suggestion(`${turno.IdTurno}`) : `${turno.IdTurno}`)} - ${turno.Fecha}, ${turno.HoraInicio} ${(profesional ? (` - ${turno.ApellidoNombre}`) : '')} `;
+        return (suggestion ? new Suggestion(`${turno.IdTurno}`) : turno.IdTurno) + ` - ${turno.Fecha}, ${turno.HoraInicio} ${(profesional ? (` - ${turno.ApellidoNombre}`) : '')} `;
     }
 
     //Intents

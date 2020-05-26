@@ -399,7 +399,16 @@ class GoogleSheetsController extends Controller
     {
         $turnos = $this->getSheetsData('TurnosMedicos')
             ->where('Estado', 'Ocupado')
-            ->where('DNI', $dni)->where('Fecha', '>=', date('Y-m-d'));
+            ->where('DNI', $dni)
+            ->where('Fecha', '>=', date('Y-m-d'));
+
+        foreach ($turnos as $turno) {
+            $sede = $this->getSheetsData('Sedes')->firstWhere('IdSede', $turno['IdSede']);
+            $medico = $this->getSheetsData('Medicos')->firstWhere('MatriculaProfesional', $turno['MatriculaProfesional']);
+            $turno['ApellidoNombre'] = $medico['ApellidoNombre'];
+            $turno['Especialidad'] = $medico['Especialidad'];
+            $turno['Sede'] = $sede['Direccion'];
+        }
         return $this->sendResponse($turnos->values(), 'Turnos de Paciente');
     }
 }
