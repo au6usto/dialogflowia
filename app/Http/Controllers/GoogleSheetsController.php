@@ -2,18 +2,28 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Google;
 use Sheets;
 use Illuminate\Support\Facades\Cache;
+use Carbon\Carbon;
 
 class GoogleSheetsController extends Controller
 {
-    private $spreadSheetId = '1xaORRQBAxi4Mly_9yccQvgc2KBVpdMWAJTRBkcXRrMI';
+    const SPREADSHEET_ID = '1xaORRQBAxi4Mly_9yccQvgc2KBVpdMWAJTRBkcXRrMI';
+
+    const MEDICOS_SHEET = 'Medicos';
+    
+    const TURNOS_SHEET = 'TurnosMedicos';
+
+    const SEDES_SHEET = 'Sedes';
+    
+    const PACIENTES_SHEET = 'Pacientes';
+
+    const ESPECIALIDADES_SHEET = 'Especialidades';
+
 
     public function getSheetsData($sheetId)
     {
-        $sheets = Sheets::spreadsheet($this->spreadSheetId)
+        $sheets = Sheets::spreadsheet(self::SPREADSHEET_ID)
           ->sheet($sheetId)
           ->get();
 
@@ -36,8 +46,7 @@ class GoogleSheetsController extends Controller
             return $this->sendResponse(Cache::get($cacheId), 'Paciente');
         }
 
-        $sheetId = 'Pacientes';
-        $paciente = $this->getSheetsData($sheetId)->firstWhere('DNI', $DNI);
+        $paciente = $this->getSheetsData(self::PACIENTES_SHEET)->firstWhere('DNI', $DNI);
         if (isset($paciente)) {
             Cache::add($cacheId, $paciente, 3600);
             return $this->sendResponse($paciente, 'Paciente');
@@ -58,108 +67,78 @@ class GoogleSheetsController extends Controller
         if (Cache::has($cacheId)) {
             return $this->sendResponse(Cache::get($cacheId), 'Medicos de Especialidad');
         }
-
-        $sheetId = 'Medicos';
-        $medicos = $this->getSheetsData($sheetId);
-        $medicosConEspecialidad = [];
-        foreach ($medicos as $key => $medico) {
-            if ($this->isEqual($medico['Especialidad'], $especialidad)) {
-                array_push($medicosConEspecialidad, $key);
+        $medicosFiltrados = $this->getSheetsData(self::MEDICOS_SHEET)->filter(function ($item, $key) use ($especialidad) {
+            if ($this->isEqual($item['Especialidad'], $especialidad)) {
+                return $item;
             }
-        }
-
-        $medicosFiltrados = $medicos->only($medicosConEspecialidad);
-        Cache::add($cacheId, $medicosFiltrados->values(), 3600);
-        return $this->sendResponse($medicosFiltrados->values(), 'Medicos de Especialidad');
+        })
+        ->values();
+        Cache::add($cacheId, $medicosFiltrados, 3600);
+        return $this->sendResponse($medicosFiltrados, 'Medicos de Especialidad');
     }
 
     public function getTurnosMedico($MatriculaProfesional)
     {
-        // $cacheId = 'TurnosDeMedico'. $MatriculaProfesional;
-        // if (Cache::has($cacheId)) {
-        //     return $this->sendResponse(Cache::get($cacheId), 'Turnos');
-        // }
-
-        $sheetId = 'TurnosMedicos';
-        $turnos = $this->getSheetsData($sheetId)
+        $turnos = $this->getSheetsData(self::TURNOS_SHEET)
             ->where('MatriculaProfesional', $MatriculaProfesional)
             ->where('Estado', 'Disponible')
             ->where('Fecha', '>=', date('Y-m-d'))
             ->values();
-        // Cache::add($cacheId, $turnos->values(), 3600);
         return $this->sendResponse($turnos, 'Turnos');
     }
 
     public function getMedicosApellido($apellido)
     {
-        $sheetId = 'Medicos';
-        $medicos = $this->getSheetsData($sheetId);
-        foreach ($medicos as $medico) {
-            if ($this->isEqual($medico['ApellidoNombre'], $apellido)) {
-                return $this->sendResponse($medico, 'Medico por Apellido');
-            }
-        }
-        return $this->sendError('No se pudo encontrar el médico');
+        $medicos = $this->getSheetsData(self::MEDICOS_SHEET);
+        $medico = $medicos->search(function ($item, $key) use ($apellido) {
+            return $this->isEqual($item['ApellidoNombre'], $apellido);
+        });
+        return $this->sendResponse($medicos->get($medico), 'Medico por Apellido');
     }
 
     public function getMedicosFecha($fecha)
     {
-        $medicos = $this->getSheetsData('Medicos');
-        $turnos = $this->getSheetsData('TurnosMedicos')->where('Fecha', $fecha)->where('Estado', 'Disponible');
-        $medicosParaFecha = [];
-        foreach ($turnos as $turno) {
-            if ($turno['Fecha'] === $fecha) {
-                array_push($medicosParaFecha, $turno['MatriculaProfesional']);
-            }
-        }
+        $fechaFormateada = Carbon::parse($fecha)->format('Y-m-d');
+        $turnos = $this->getSheetsData(self::TURNOS_SHEET)
+        ->where('Estado', 'Disponible')
+        ->where('Fecha', $fechaFormateada)
+        ->pluck('MatriculaProfesional', 'MatriculaProfesional')
+        ->toArray();
 
-        $medicosToRemove = [];
-        foreach ($medicos as $key => $medico) {
-            if (!in_array($medico['MatriculaProfesional'], $medicosParaFecha)) {
-                array_push($medicosToRemove, $key);
-            }
-        }
-        return $medicos->except($medicosToRemove);
+        $medicos = $this->getSheetsData(self::MEDICOS_SHEET)
+            ->filter(function ($item, $key) use ($turnos) {
+                if (in_array($item['MatriculaProfesional'], $turnos)) {
+                    return $item;
+                }
+            })
+            ->values();
+        return $medicos;
     }
 
     public function getTurnos($fecha)
     {
-        $fechaFormateada = \Carbon\Carbon::parse($fecha)->format('Y-m-d');
-        // $cacheId = 'TurnosFecha'. $fecha;
-
-        // if (Cache::has($cacheId)) {
-        //     return $this->sendResponse(Cache::get($cacheId), 'Medicos');
-        // }
-
-        $medicos = $this->getSheetsData('Medicos');
-        $sheetId = 'TurnosMedicos';
-        $turnos = $this->getSheetsData($sheetId)
+        $fechaFormateada = Carbon::parse($fecha)->format('Y-m-d');
+        $medicos = $this->getSheetsData(self::MEDICOS_SHEET);
+        $turnos = $this->getSheetsData(self::TURNOS_SHEET)
                 ->where('Fecha', $fechaFormateada)
                 ->where('Fecha', '>=', date('Y-m-d'))
-                ->where('Estado', 'Disponible');
-        foreach ($turnos as $turno) {
-            $turno['ApellidoNombre'] = $medicos->firstWhere('MatriculaProfesional', $turno['MatriculaProfesional'])['ApellidoNombre'];
-            $turno['Especialidad'] = $medicos->firstWhere('MatriculaProfesional', $turno['MatriculaProfesional'])['Especialidad'];
-            $turno['PrecioConsulta'] = $medicos->firstWhere('MatriculaProfesional', $turno['MatriculaProfesional'])['PrecioConsulta'];
-        }
-        // Cache::add($cacheId, $turnos->values(), 3600);
+                ->where('Estado', 'Disponible')
+                ->map(function ($item, $key) use ($medicos) {
+                    $item['ApellidoNombre'] = $medicos->firstWhere('MatriculaProfesional', $item['MatriculaProfesional'])['ApellidoNombre'];
+                    $item['Especialidad'] = $medicos->firstWhere('MatriculaProfesional', $item['MatriculaProfesional'])['Especialidad'];
+                    $item['PrecioConsulta'] = $medicos->firstWhere('MatriculaProfesional', $item['MatriculaProfesional'])['PrecioConsulta'];
+                    return $item;
+                });
+
         return $this->sendResponse($turnos->values(), 'Turnos de Médico');
     }
 
     public function isTurno($numero)
     {
-        $sheetId = 'TurnosMedicos';
-        // $cacheId = 'TurnoExiste'. $numero;
-
-        // if (Cache::has($cacheId)) {
-        //     return $this->sendResponse(Cache::get($cacheId), 'Medicos');
-        // }
-
-        $turno = $this->getSheetsData($sheetId)
+        $turno = $this->getSheetsData(self::TURNOS_SHEET)
                 ->where('IdTurno', $numero)
                 ->where('Estado', 'Disponible')
                 ->first();
-        // Cache::add($cacheId, $turno, 3600);
         return isset($turno) ?
         $this->sendResponse($turno, 'Turno Correcto') :
         $this->sendError('No se pudo encontrar el turno');
@@ -167,8 +146,7 @@ class GoogleSheetsController extends Controller
 
     public function isObraSocialDeMedico(string $apellido, string $obraSocial)
     {
-        $sheetId = 'Medicos';
-        $medico = $this->getSheetsData($sheetId)
+        $medico = $this->getSheetsData(self::MEDICOS_SHEET)
                 ->firstWhere('ApellidoNombre', $apellido);
         return isset($medico) && $this->isEqual($medico['ObrasSociales'], $obraSocial) ?
         $this->sendResponse($medico, 'Médico con Obra Social Correcto') :
@@ -178,28 +156,22 @@ class GoogleSheetsController extends Controller
     public function getTurnosFechaMedico($fecha, $MatriculaProfesional = null)
     {
         if (isset($MatriculaProfesional)) {
-            // $cacheId = 'TurnosMedico'. $fecha . $MatriculaProfesional;
-
-            // if (Cache::has($cacheId)) {
-            //     return $this->sendResponse(Cache::get($cacheId), 'Medicos');
-            // }
-            $fechaFormateada = \Carbon\Carbon::parse($fecha)->format('Y-m-d');
-            $medicos = $this->getSheetsData('Medicos');
-            $sheetId = 'TurnosMedicos';
-            $turnos = $this->getSheetsData($sheetId)
+            $fechaFormateada = Carbon::parse($fecha)->format('Y-m-d');
+            $medicos = $this->getSheetsData(self::MEDICOS_SHEET);
+            $medico = $medicos->firstWhere('MatriculaProfesional', $MatriculaProfesional);
+            $turnos = $this->getSheetsData(self::TURNOS_SHEET)
                 ->where('Fecha', $fechaFormateada)
                 ->where('MatriculaProfesional', $MatriculaProfesional)
                 ->where('Fecha', '>=', date('Y-m-d'))
-                ->where('Estado', 'Disponible');
-
-            $medico = $medicos->firstWhere('MatriculaProfesional', $MatriculaProfesional);
-            foreach ($turnos as $turno) {
-                $turno['ApellidoNombre'] = $medico['ApellidoNombre'];
-                $turno['Especialidad'] = $medico['Especialidad'];
-                $turno['PrecioConsulta'] = $medico['PrecioConsulta'];
-            }
-            // Cache::add($cacheId, $turnos->values(), 3600);
-            return $this->sendResponse($turnos->values(), 'Turnos de Médico');
+                ->where('Estado', 'Disponible')
+                ->map(function ($item, $key) use ($medico) {
+                    $item['ApellidoNombre'] = $medico['ApellidoNombre'];
+                    $item['Especialidad'] = $medico['Especialidad'];
+                    $item['PrecioConsulta'] = $medico['PrecioConsulta'];
+                    return $item;
+                })
+                ->values();
+            return $this->sendResponse($turnos, 'Turnos de Médico');
         } else {
             return $this->getTurnos($fecha);
         }
@@ -207,57 +179,43 @@ class GoogleSheetsController extends Controller
 
     public function getTurnosApellidoFecha(string $apellido, string $fecha)
     {
-        // $cacheId = 'TurnosApellidoNombreFecha'. $apellido . $fecha;
-
-        // if (Cache::has($cacheId)) {
-        //     return $this->sendResponse(Cache::get($cacheId), 'Medicos');
-        // }
-        $fechaFormateada = \Carbon\Carbon::parse($fecha)->format('Y-m-d');
-        $medico = $this->getSheetsData('Medicos')->firstWhere('ApellidoNombre', $apellido);
-        $sheetId = 'TurnosMedicos';
-        $turnos = $this->getSheetsData($sheetId)
-                // ->where('Fecha', $fechaFormateada)
+        $fechaFormateada = Carbon::parse($fecha)->format('Y-m-d');
+        $medico = $this->getSheetsData(self::MEDICOS_SHEET)->firstWhere('ApellidoNombre', $apellido);
+        if (isset($medico)) {
+            $turnos = $this->getSheetsData(self::TURNOS_SHEET)
+                ->where('Fecha', $fechaFormateada)
                 ->where('MatriculaProfesional', $medico['MatriculaProfesional'])
                 ->where('Fecha', '>=', date('Y-m-d'))
-                ->where('Estado', 'Disponible');
-
-        $turnosToRemove = [];
-        foreach ($turnos as $key => $turno) {
-            if ($this->isEqual($turno['Fecha'], $fechaFormateada)) {
-                $turno['ApellidoNombre'] = $medico['ApellidoNombre'];
-                $turno['Especialidad'] = $medico['Especialidad'];
-                $turno['PrecioConsulta'] = $medico['PrecioConsulta'];
-            } else {
-                array_push($turnosToRemove, $key);
-            }
+                ->where('Estado', 'Disponible')
+                ->map(function ($item, $key) use ($medico) {
+                    $item['ApellidoNombre'] = $medico['ApellidoNombre'];
+                    $item['Especialidad'] = $medico['Especialidad'];
+                    $item['PrecioConsulta'] = $medico['PrecioConsulta'];
+                    return $item;
+                })
+                ->values();
+            return $this->sendResponse($turnos, 'Turnos de Médico');
         }
-        // Cache::add($cacheId, $turnos->except($turnosToRemove)->values(), 3600);
-        return $this->sendResponse($turnos->except($turnosToRemove)->values(), 'Turnos de Médico');
+        return $this->sendError('No se encontró ningún turno para la fecha elegida');
     }
 
     public function getMedicosFechaEspecialidad(string $fecha, string $especialidad)
     {
-        $cacheId = 'MedicosFechayEspecialidad'. $fecha . $especialidad;
-
-        if (Cache::has($cacheId)) {
-            return $this->sendResponse(Cache::get($cacheId), 'Medicos');
-        }
-        $fechaFormateada = \Carbon\Carbon::parse($fecha)->format('Y-m-d');
-        $medicos = $this->getSheetsData('Medicos');
-        $sheetId = 'TurnosMedicos';
-        $turnos = $this->getSheetsData($sheetId)
+        $fechaFormateada = Carbon::parse($fecha)->format('Y-m-d');
+        $turnos = $this->getSheetsData(self::TURNOS_SHEET)
                 ->where('Fecha', $fechaFormateada)
-                ->where('Estado', 'Disponible');
-        $medicosToRemove = [];
-        foreach ($medicos as $key => $medico) {
-            if ($turnos->firstWhere('MatriculaProfesional', $medico['MatriculaProfesional']) !== null &&
-            $this->isEqual($medico['Especialidad'], $especialidad)) {
-            } else {
-                array_push($medicosToRemove, $key);
-            }
-        }
-        Cache::add($cacheId, $medicos->except($medicosToRemove)->values(), 3600);
-        return $this->sendResponse($medicos->except($medicosToRemove)->values(), 'Médicos de Especialidad y fecha');
+                ->where('Estado', 'Disponible')
+                ->pluck('MatriculaProfesional', 'MatriculaProfesional')
+                ->toArray();
+        $medicos = $this->getSheetsData(self::MEDICOS_SHEET)
+                ->filter(function ($item, $key) use ($turnos, $especialidad) {
+                    if ($this->isEqual($especialidad, $item['Especialidad']) && in_array($item['MatriculaProfesional'], $turnos)) {
+                        return $item;
+                    }
+                })
+                ->values();
+        
+        return $this->sendResponse($medicos, 'Médicos de Especialidad y fecha');
     }
 
     public function getTurnosFecha($anio, $mes, $dia)
@@ -272,82 +230,43 @@ class GoogleSheetsController extends Controller
         if (Cache::has($cacheId)) {
             return $this->sendResponse(Cache::get($cacheId), 'Medicos');
         }
-        $medicos = $this->getSheetsData('Medicos');
-        $medicos = $medicos->map(function ($item, $key) {
-            if (isset($item['ObrasSociales'])) {
-                if (strpos($item['ObrasSociales'], ',')) {
-                    $item['ObrasSociales'] = explode(", ", $item['ObrasSociales']);
-                } else {
-                    $item['ObrasSociales'] = [$item['ObrasSociales']];
-                }
-            }
-            return $item;
-        });
-        $medicosToRemove = [];
-        $arrayIdsMedicos = [];
-        foreach ($medicos as $medico) {
-            if ($this->isEqual($medico['Especialidad'], $especialidad)) {
-                foreach ($medico['ObrasSociales'] as $os) {
-                    if ($this->isEqual($os, $obraSocial)) {
-                        array_push($arrayIdsMedicos, $medico['MatriculaProfesional']);
-                    }
-                }
-            }
-        }
 
-        foreach ($medicos as $key => $medico) {
-            if (!in_array($medico['MatriculaProfesional'], $arrayIdsMedicos)) {
-                array_push($medicosToRemove, $key);
-            }
-        }
-        
-        $medicosFiltrados = $medicos->except($medicosToRemove)->values();
+        $medicosFiltrados = $this->getSheetsData(self::MEDICOS_SHEET)->filter(function ($item, $key) use ($obraSocial , $especialidad) {
+            return $this->isEqual($item['ObrasSociales'], $obraSocial) && $this->isEqual($item['Especialidad'], $especialidad);
+        })
+        ->values();
+
         Cache::add($cacheId, $medicosFiltrados, 3600);
         return $this->sendResponse($medicosFiltrados, 'Medicos de OS y Especialidad');
     }
 
     public function getTurnosObraSocial(string $obraSocial)
     {
-        $medicos = $this->getSheetsData('Medicos');
-        $turnos = $this->getSheetsData('TurnosMedicos')->where('Estado', 'Disponible');
-        $medicos = $medicos->map(function ($item, $key) {
-            if (isset($item['ObrasSociales'])) {
-                if (strpos($item['ObrasSociales'], ',')) {
-                    $item['ObrasSociales'] = explode(", ", $item['ObrasSociales']);
-                } else {
-                    $item['ObrasSociales'] = [$item['ObrasSociales']];
-                }
-            }
-            return $item;
+        $medicos = $this->getSheetsData(self::MEDICOS_SHEET)->filter(function ($item, $key) use ($obraSocial) {
+            return $this->isEqual($item['ObrasSociales'], $obraSocial);
         });
-        $turnosToRemove = [];
-        $arrayIdsMedicos = [];
-        foreach ($medicos as $medico) {
-            foreach ($medico['ObrasSociales'] as $os) {
-                if ($this->isEqual($os, $obraSocial)) {
-                    array_push($arrayIdsMedicos, $medico['MatriculaProfesional']);
-                }
+        $matriculas = $medicos->pluck('MatriculaProfesional', 'MatriculaProfesional')->toArray();
+        $turnos = $this->getSheetsData(self::TURNOS_SHEET)
+        ->where('Estado', 'Disponible')
+        ->where('Fecha', '>=', date('Y-m-d'))
+        ->filter(function ($item, $key) use ($medicos, $matriculas) {
+            if (in_array($item['MatriculaProfesional'], $matriculas)) {
+                $item['ApellidoNombre'] = $medicos->firstWhere('MatriculaProfesional', $item['MatriculaProfesional'])['ApellidoNombre'];
+                $item['Especialidad'] = $medicos->firstWhere('MatriculaProfesional', $item['MatriculaProfesional'])['Especialidad'];
+                return $item;
             }
-        }
+        });
 
-        foreach ($turnos as $key => $turno) {
-            if (in_array($turno['MatriculaProfesional'], $arrayIdsMedicos)) {
-                $turno['ApellidoNombre'] = $medicos->firstWhere('MatriculaProfesional', $turno['MatriculaProfesional'])['ApellidoNombre'];
-                $turno['Especialidad'] = $medicos->firstWhere('MatriculaProfesional', $turno['MatriculaProfesional'])['Especialidad'];
-            } else {
-                array_push($turnosToRemove, $key);
-            }
-        }
-        return $turnos->except($turnosToRemove);
+        return $turnos->values();
     }
 
     public function storePaciente($dni, $idTurno)
     {
         //Registro paciente
-        $pacientes = $this->getSheetsData('Pacientes');
+        $pacientes = $this->getSheetsData(self::PACIENTES_SHEET);
         $paciente = $pacientes->firstWhere('DNI', $dni);
         $turnoAsignado = null;
-        $turnos = $this->getSheetsData('TurnosMedicos');
+        $turnos = $this->getSheetsData(self::TURNOS_SHEET);
         foreach ($turnos as $key => $turno) {
             if ((int) $turno['IdTurno'] === (int) $idTurno) {
                 $fila = $key + 1;
@@ -357,7 +276,7 @@ class GoogleSheetsController extends Controller
         }
 
         if (isset($turnoAsignado)) {
-            $medico = $this->getSheetsData('Medicos')->firstWhere('MatriculaProfesional', $turnoAsignado['MatriculaProfesional']);
+            $medico = $this->getSheetsData(self::MEDICOS_SHEET)->firstWhere('MatriculaProfesional', $turnoAsignado['MatriculaProfesional']);
             $sede = $this->getSheetsData('Sedes')->firstWhere('IdSede', $turnoAsignado['IdSede']);
             $datos = [
                 'Paciente' => (isset($paciente) ? $paciente['ApellidoNombre'] : false),
@@ -377,20 +296,16 @@ class GoogleSheetsController extends Controller
 
     public function cancelarTurno($dni, $idTurno)
     {
-        $fila = null;
-        $turnos = $this->getSheetsData('TurnosMedicos')
+        $nroTurno = $this->getSheetsData(self::TURNOS_SHEET)
             ->where('Estado', 'Ocupado')
-            ->where('DNI', $dni);
-        foreach ($turnos as $key => $turno) {
-            if ((int) $turno['IdTurno'] === (int) $idTurno) {
-                $fila = $key + 1;
-                break;
-            }
-        }
+            ->where('DNI', $dni)
+            ->search(function ($item, $key) use ($idTurno) {
+                return (int) $item['IdTurno'] === (int) $idTurno;
+            });
 
-        if (isset($fila)) {
+        if (isset($nroTurno)) {
             $datos = [
-                'Fila' => $fila
+                'Fila' => $nroTurno + 1
             ];
             return $this->sendResponse($datos, 'Turno Cancelado');
         }
@@ -399,18 +314,20 @@ class GoogleSheetsController extends Controller
     
     public function getTurnosPaciente($dni)
     {
-        $turnos = $this->getSheetsData('TurnosMedicos')
+        $turnos = $this->getSheetsData(self::TURNOS_SHEET)
             ->where('Estado', 'Ocupado')
             ->where('DNI', $dni)
-            ->where('Fecha', '>=', date('Y-m-d'));
+            ->where('Fecha', '>=', date('Y-m-d'))
+            ->map(function ($item, $key) {
+                $sede = $this->getSheetsData('Sedes')->firstWhere('IdSede', $item['IdSede']);
+                $medico = $this->getSheetsData(self::MEDICOS_SHEET)->firstWhere('MatriculaProfesional', $item['MatriculaProfesional']);
+                $item['ApellidoNombre'] = $medico['ApellidoNombre'];
+                $item['Especialidad'] = $medico['Especialidad'];
+                $item['Sede'] = $sede['Direccion'];
+                return $item;
+            })
+            ->values();
 
-        foreach ($turnos as $turno) {
-            $sede = $this->getSheetsData('Sedes')->firstWhere('IdSede', $turno['IdSede']);
-            $medico = $this->getSheetsData('Medicos')->firstWhere('MatriculaProfesional', $turno['MatriculaProfesional']);
-            $turno['ApellidoNombre'] = $medico['ApellidoNombre'];
-            $turno['Especialidad'] = $medico['Especialidad'];
-            $turno['Sede'] = $sede['Direccion'];
-        }
-        return $this->sendResponse($turnos->values(), 'Turnos de Paciente');
+        return $this->sendResponse($turnos, 'Turnos de Paciente');
     }
 }
