@@ -20,6 +20,8 @@ Route::get('/', function () {
 Auth::routes();
 
 Route::get('/sheet/{sheetId}', 'GoogleSheetsController@getSpreadSheet');
+Route::get('/Paciente/{dni}/Turnos', 'GoogleSheetsController@getTurnosPaciente');
+Route::get('/Paciente/{dni}/Turno/{IdTurno}/cancelar', 'GoogleSheetsController@cancelarTurno');
 Route::get('/Paciente/{dni}/Turno/{IdTurno}', 'GoogleSheetsController@storePaciente');
 Route::get('/Paciente/{dni}', 'GoogleSheetsController@getPaciente');
 Route::get('/MedicosEspecialidad/{especialidad}', 'GoogleSheetsController@getMedicosEspecialidad');
