@@ -400,6 +400,6 @@ class GoogleSheetsController extends Controller
         $turnos = $this->getSheetsData('TurnosMedicos')
             ->where('Estado', 'Ocupado')
             ->where('DNI', $dni)->where('Fecha', '>=', date('Y-m-d'));
-        return $this->sendResponse($turnos, 'Turnos de Paciente');
+        return $this->sendResponse($turnos->values(), 'Turnos de Paciente');
     }
 }
