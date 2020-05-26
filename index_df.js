@@ -42,10 +42,6 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     }
 
     function updateValues(range, values, update = true) {
-        let body = {
-            values: values
-        };
-
         let sendObject = {
             spreadsheetId: spreadsheetId,
             auth: serviceAccountAuth,
@@ -54,7 +50,9 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
             responseDateTimeRenderOption: "FORMATTED_STRING",
             responseValueRenderOption: "UNFORMATTED_VALUE",
             valueInputOption: "RAW",
-            resource: body
+            resource: {
+                values: values
+            }
         };
         if (update) {
             sheets.spreadsheets.values.update(sendObject, function (err, res) {
@@ -91,10 +89,6 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     //Format Data
     function getMedicoInfo(medico) {
         return `${medico.ApellidoNombre} - Obras Sociales: ${medico.ObrasSociales} - Precio Consulta: ${medico.PrecioConsulta} - Horario: ${medico.Atencion}`;
-    }
-
-    function getTurnoInfo(turno, profesional = true, suggestion = false) {
-        return (suggestion ? new Suggestion(`${turno.IdTurno}`) : turno.IdTurno) + ` - ${turno.Fecha}, ${turno.HoraInicio} ${(profesional ? (` - ${turno.ApellidoNombre}`) : '')} `;
     }
 
     //Intents
@@ -165,7 +159,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
                  if (lengthOverZero(res.data.data)) {
                    agent.add(`Los turnos disponibles son:`);
                    res.data.data.map(turno => {
-                        agent.add(getTurnoInfo(turno));
+                        agent.add(`${turno.IdTurno} - ${turno.Fecha} | ${turno.HoraInicio}`);
                     });
                    agent.add(`Indique el número de turno que desea elegir`);
                  } else {
@@ -184,11 +178,11 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
                  if (lengthOverZero(res.data.data)) {
                    agent.add(`Los turnos disponibles son:`);
                    res.data.data.map(turno => {
-                        agent.add(getTurnoInfo(turno, false));
-                    });
+                        agent.add(`${turno.IdTurno} - ${turno.Fecha} | ${turno.HoraInicio}`);
+                   });
                    agent.add(`¿Desea solicitar alguno de los turnos previamente mencionados?`);
                  } else {
-                   agent.add(`Eligió un médico incorrecto`);
+                   agent.add(`El profesional no atiende la fecha elegida, por favor indique otra`);
                  }
                });
          } else {
@@ -362,11 +356,10 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
         //Si tiene fecha y profesional
         if (isSet(agent.parameters.dni)) {
             return getSpreadSheetData(`Paciente/${agent.parameters.dni}/Turnos`).then( res => {
-                console.log(res.data);
                 if (lengthOverZero(res.data.data)) {
                   agent.add(`Los turnos registrados hasta el momento son:`);
                   res.data.data.map(turno => {
-                       agent.add(getTurnoInfo(turno, true, true));
+                       agent.add(`${turno.IdTurno} - ${turno.Fecha} | ${turno.HoraInicio} - ${turno.ApellidoNombre} - ${turno.Especialidad} - ${turno.Sede}`);
                    });
                   agent.add(`Indique el número de turno que desea cancelar`);
                 } else {
@@ -379,20 +372,24 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     }
 
     function cancelarTurno(agent) {
-        return getSpreadSheetData(`Paciente/${agent.parameters.dni}/Turno/${agent.parameters.turno}`).then(res => {
+        return getSpreadSheetData(`Paciente/Turno/${agent.parameters.turno}/cancelar`).then(res => {
             if (res.data.success) {
                 let fila = res.data.data.Fila;
                 let values = [
                       ["Disponible", ""]
                 ];
                 let range = `TurnosMedicos!H${fila}:G${fila}`;
+                console.log(res.data);
+                console.log(values);
+                console.log(fila);
+                console.log(range);
                 updateValues(range, values);
 
                 agent.add(`¡Perfecto ${agent.parameters['last-name']} ${agent.parameters['given-name']} !`);
                 agent.add(`Su turno ha sido cancelado con éxito.`);
                 agent.add(`¿Puedo ayudarte en algo más?`);
             } else {
-                agent.add(`No se pudo asignar el turno, intente nuevamente.`);
+                agent.add(`No se pudo cancelar el turno, intente nuevamente.`);
             }
         });
     }
