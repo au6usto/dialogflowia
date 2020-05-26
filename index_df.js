@@ -352,7 +352,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
         });
     }
 
-    function turnosDePaciente(agent) {
+    function turnosDePacienteCancelacion(agent) {
         //Si tiene fecha y profesional
         if (isSet(agent.parameters.dni)) {
             return getSpreadSheetData(`Paciente/${agent.parameters.dni}/Turnos`).then( res => {
@@ -363,30 +363,44 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
                    });
                   agent.add(`Indique el número de turno que desea cancelar`);
                 } else {
-                  agent.add(`Usted no posee turnos registrados`);
+                  agent.add(`No posee turnos a cancelar ¿Puedo ayudarte en algo más?`);
                 }
                });
          } else {
-            agent.add(`Lo siento, tiene que elegir un profesional`);
+            agent.add(`Lo siento, tiene que ingresar un DNI`);
+        }
+    }
+
+    function turnosDePacienteConsulta(agent) {
+        //Si tiene fecha y profesional
+        if (isSet(agent.parameters.dni)) {
+            return getSpreadSheetData(`Paciente/${agent.parameters.dni}/Turnos`).then( res => {
+                if (lengthOverZero(res.data.data)) {
+                  agent.add(`Los turnos registrados hasta el momento son:`);
+                  res.data.data.map(turno => {
+                       agent.add(`${turno.IdTurno} - ${turno.Fecha} | ${turno.HoraInicio} - ${turno.ApellidoNombre} - ${turno.Especialidad} - ${turno.Sede}`);
+                   });
+                  agent.add(`¿Puedo ayudarte en algo más?`);
+                } else {
+                  agent.add(`No posee turnos a cancelar ¿Puedo ayudarte en algo más?`);
+                }
+               });
+         } else {
+            agent.add(`Lo siento, tiene que ingresar un DNI`);
         }
     }
 
     function cancelarTurno(agent) {
-        agent.add(`Paciente/${agent.parameters.dni}/Turno/${agent.parameters.turno}/cancelar`);
         return getSpreadSheetData(`Paciente/${agent.parameters.dni}/Turno/${agent.parameters.turno}/cancelar`).then(res => {
-            if (res.data.success) {
+            if (lengthOverZero(res.data.data)) {
                 let fila = res.data.data.Fila;
                 let values = [
                       ["Disponible", ""]
                 ];
                 let range = `TurnosMedicos!H${fila}:G${fila}`;
-                console.log(res.data);
-                console.log(values);
-                console.log(fila);
-                console.log(range);
                 updateValues(range, values);
 
-                agent.add(`¡Perfecto ${agent.parameters['last-name']} ${agent.parameters['given-name']} !`);
+                agent.add(`¡Perfecto!`);
                 agent.add(`Su turno ha sido cancelado con éxito.`);
                 agent.add(`¿Puedo ayudarte en algo más?`);
             } else {
@@ -417,8 +431,9 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     intentMap.set(`UsuarioEligeTurno`, usuarioEligeTurno);
     intentMap.set(`UsuarioEligeTurno-PoseeObraSocial`, usuarioEligeTurnoPoseeOS);
     intentMap.set(`UsuarioRegistro`, savePaciente);
-    intentMap.set(`UsuarioPideCancelarTurno-VerificaTurnos`, turnosDePaciente);
+    intentMap.set(`UsuarioPideCancelarTurno-VerificaTurnos`, turnosDePacienteCancelacion);
     intentMap.set(`UsuarioPideCancelarTurno-VerificaTurnos-IndicaTurno`, cancelarTurno);
+    intentMap.set(`UsuarioPideConsultarTurno-VisualizaTurno`, turnosDePacienteConsulta);
     intentMap.set(`Default Fallback Intent`, fallback);
     agent.handleRequest(intentMap);
 });
