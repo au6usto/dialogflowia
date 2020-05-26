@@ -92,6 +92,15 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     }
 
     //Intents
+    function usuarioPideTurno(agent) {
+        agent.add(`Muy bien. Las especialidades que brindamos en nuestro centro médico son:`);
+        agent.add(new Suggestion(`Clínico`));
+        agent.add(new Suggestion(`Nutrición`));
+        agent.add(new Suggestion(`Psicología`));
+        agent.add(new Suggestion(`Urología`));
+        agent.add(`¿Cuál de ellas desea consultar?`);
+    }
+
     function usuarioIngresaEspecialidad(agent) {
         agent.add(`Muy bien. Por favor, indique a continuación uno de los siguientes parámetros de búsqueda:`);
         agent.add(`- nombre y/o apellido del especialista al que desea consultar`);
