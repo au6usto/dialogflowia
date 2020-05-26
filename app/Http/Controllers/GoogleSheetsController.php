@@ -375,10 +375,12 @@ class GoogleSheetsController extends Controller
         return $this->sendError('No se pudo asignar el turno');
     }
 
-    public function cancelarTurno($idTurno)
+    public function cancelarTurno($dni, $idTurno)
     {
         $fila = null;
-        $turnos = $this->getSheetsData('TurnosMedicos')->where('Estado', 'Ocupado');
+        $turnos = $this->getSheetsData('TurnosMedicos')
+            ->where('Estado', 'Ocupado')
+            ->where('DNI', $dni);
         foreach ($turnos as $key => $turno) {
             if ((int) $turno['IdTurno'] === (int) $idTurno) {
                 $fila = $key + 1;

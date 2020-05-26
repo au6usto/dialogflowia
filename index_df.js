@@ -372,7 +372,8 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     }
 
     function cancelarTurno(agent) {
-        return getSpreadSheetData(`Paciente/Turno/${agent.parameters.turno}/cancelar`).then(res => {
+        agent.add(`Paciente/${agent.parameters.dni}/Turno/${agent.parameters.turno}/cancelar`);
+        return getSpreadSheetData(`Paciente/${agent.parameters.dni}/Turno/${agent.parameters.turno}/cancelar`).then(res => {
             if (res.data.success) {
                 let fila = res.data.data.Fila;
                 let values = [
