@@ -209,9 +209,7 @@ class GoogleSheetsController extends Controller
                 ->toArray();
         $medicos = $this->getSheetsData(self::MEDICOS_SHEET)
                 ->filter(function ($item, $key) use ($turnos, $especialidad) {
-                    if ($this->isEqual($especialidad, $item['Especialidad']) && in_array($item['MatriculaProfesional'], $turnos)) {
-                        return $item;
-                    }
+                    return $this->isEqual($item['Especialidad'], $especialidad) && in_array($item['MatriculaProfesional'], $turnos);
                 })
                 ->values();
         
