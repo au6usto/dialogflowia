@@ -382,7 +382,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
                    });
                   agent.add(`¿Puedo ayudarte en algo más?`);
                 } else {
-                  agent.add(`No posee turnos a cancelar ¿Puedo ayudarte en algo más?`);
+                  agent.add(`No posee turnos ¿Puedo ayudarte en algo más?`);
                 }
                });
          } else {
@@ -392,7 +392,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
 
     function cancelarTurno(agent) {
         return getSpreadSheetData(`Paciente/${agent.parameters.dni}/Turno/${agent.parameters.turno}/cancelar`).then(res => {
-            if (lengthOverZero(res.data.data)) {
+            if (res.data.succes) {
                 let fila = res.data.data.Fila;
                 let values = [
                       ["Disponible", ""]
