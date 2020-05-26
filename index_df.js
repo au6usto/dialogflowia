@@ -392,7 +392,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
 
     function cancelarTurno(agent) {
         return getSpreadSheetData(`Paciente/${agent.parameters.dni}/Turno/${agent.parameters.turno}/cancelar`).then(res => {
-            if (res.data.succes) {
+            if (isSet(res.data.data.Fila)) {
                 let fila = res.data.data.Fila;
                 let values = [
                       ["Disponible", ""]
