@@ -93,8 +93,8 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
         return `${medico.ApellidoNombre} - Obras Sociales: ${medico.ObrasSociales} - Precio Consulta: ${medico.PrecioConsulta} - Horario: ${medico.Atencion}`;
     }
 
-    function getTurnoInfo(turno, profesional = true) {
-        return `${turno.IdTurno} - ${turno.Fecha}, ${turno.HoraInicio} ${(profesional ? (` - ${turno.ApellidoNombre}`) : '')} `;
+    function getTurnoInfo(turno, profesional = true, suggestion = false) {
+        return `${(suggestion ? new Suggestion(`${turno.IdTurno}`) : `${turno.IdTurno}`)} - ${turno.Fecha}, ${turno.HoraInicio} ${(profesional ? (` - ${turno.ApellidoNombre}`) : '')} `;
     }
 
     //Intents
@@ -362,15 +362,16 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
         //Si tiene fecha y profesional
         if (isSet(agent.parameters.dni)) {
             return getSpreadSheetData(`Paciente/${agent.parameters.dni}/Turnos`).then( res => {
-                 if (lengthOverZero(res.data.data)) {
-                   agent.add(`Los turnos registrados hasta el momento son:`);
-                   res.data.data.map(turno => {
-                        agent.add(getTurnoInfo(turno));
-                    });
-                   agent.add(`Indique el número de turno que desea cancelar`);
-                 } else {
-                   agent.add(`Eligió un médico incorrecto`);
-                 }
+                console.log(res.data);
+                if (lengthOverZero(res.data.data)) {
+                  agent.add(`Los turnos registrados hasta el momento son:`);
+                  res.data.data.map(turno => {
+                       agent.add(getTurnoInfo(turno, true, true));
+                   });
+                  agent.add(`Indique el número de turno que desea cancelar`);
+                } else {
+                  agent.add(`Usted no posee turnos registrados`);
+                }
                });
          } else {
             agent.add(`Lo siento, tiene que elegir un profesional`);
@@ -419,7 +420,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     intentMap.set(`UsuarioEligeTurno-PoseeObraSocial`, usuarioEligeTurnoPoseeOS);
     intentMap.set(`UsuarioRegistro`, savePaciente);
     intentMap.set(`UsuarioPideCancelarTurno-VerificaTurnos`, turnosDePaciente);
-    intentMap.set(`UsuarioPideCancelarTurno-CancelaTurno`, cancelarTurno);
+    intentMap.set(`UsuarioPideCancelarTurno-VerificaTurnos-IndicaTurno`, cancelarTurno);
     intentMap.set(`Default Fallback Intent`, fallback);
     agent.handleRequest(intentMap);
 });

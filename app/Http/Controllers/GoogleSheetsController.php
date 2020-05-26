@@ -84,6 +84,7 @@ class GoogleSheetsController extends Controller
         $turnos = $this->getSheetsData($sheetId)
             ->where('MatriculaProfesional', $MatriculaProfesional)
             ->where('Estado', 'Disponible')
+            ->where('Fecha', '>=', date('Y-m-d'))
             ->values();
         // Cache::add($cacheId, $turnos->values(), 3600);
         return $this->sendResponse($turnos, 'Turnos');
@@ -134,6 +135,7 @@ class GoogleSheetsController extends Controller
         $sheetId = 'TurnosMedicos';
         $turnos = $this->getSheetsData($sheetId)
                 ->where('Fecha', $fechaFormateada)
+                ->where('Fecha', '>=', date('Y-m-d'))
                 ->where('Estado', 'Disponible');
         foreach ($turnos as $turno) {
             $turno['ApellidoNombre'] = $medicos->firstWhere('MatriculaProfesional', $turno['MatriculaProfesional'])['ApellidoNombre'];
@@ -187,6 +189,7 @@ class GoogleSheetsController extends Controller
             $turnos = $this->getSheetsData($sheetId)
                 ->where('Fecha', $fechaFormateada)
                 ->where('MatriculaProfesional', $MatriculaProfesional)
+                ->where('Fecha', '>=', date('Y-m-d'))
                 ->where('Estado', 'Disponible');
 
             $medico = $medicos->firstWhere('MatriculaProfesional', $MatriculaProfesional);
@@ -215,6 +218,7 @@ class GoogleSheetsController extends Controller
         $turnos = $this->getSheetsData($sheetId)
                 // ->where('Fecha', $fechaFormateada)
                 ->where('MatriculaProfesional', $medico['MatriculaProfesional'])
+                ->where('Fecha', '>=', date('Y-m-d'))
                 ->where('Estado', 'Disponible');
 
         $turnosToRemove = [];
@@ -393,7 +397,9 @@ class GoogleSheetsController extends Controller
     
     public function getTurnosPaciente($dni)
     {
-        $turnos = $this->getSheetsData('TurnosMedicos')->where('Estado', 'Ocupado')->where('DNI', $dni)->where('Fecha', '>', date('Y-m-d'));
+        $turnos = $this->getSheetsData('TurnosMedicos')
+            ->where('Estado', 'Ocupado')
+            ->where('DNI', $dni)->where('Fecha', '>=', date('Y-m-d'));
         return $this->sendResponse($turnos, 'Turnos de Paciente');
     }
 }
