@@ -31,7 +31,7 @@ class GoogleSheetsController extends Controller
 
         $rows = Sheets::collection($header, $sheets);
 
-        return $rows->reverse()->take(168);
+        return $rows->reverse()->take(500);
     }
 
     public function getSpreadSheet($sheetId)
@@ -112,7 +112,7 @@ class GoogleSheetsController extends Controller
                 }
             })
             ->values();
-        return $medicos;
+        return $this->sendResponse($medicos, 'Medico por Fecha');
     }
 
     public function getTurnos($fecha)
@@ -253,9 +253,10 @@ class GoogleSheetsController extends Controller
                 $item['Especialidad'] = $medicos->firstWhere('MatriculaProfesional', $item['MatriculaProfesional'])['Especialidad'];
                 return $item;
             }
-        });
+        })
+        ->values();
 
-        return $turnos->values();
+        return $this->sendResponse($turnos, 'Turnos disponible por Obra Social');
     }
 
     public function storePaciente($dni, $idTurno)
