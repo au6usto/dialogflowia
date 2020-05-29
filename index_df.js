@@ -307,7 +307,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
 
     function usuarioEligeTurno(agent) {
         if (isSet(agent.parameters.turno) && isSet(agent.parameters.date) && isSet(agent.parameters.profesional)) {
-            return getSpreadSheetData(`Turno/` + agent.parameters.turno).then(res => {
+            return getSpreadSheetData(`Turno/${agent.parameters.turno}/Medico/${agent.parameters.profesional}/Fecha/${agent.parameters.date}`).then(res => {
                 if (res.data.success) {
                     agent.add(`¡Muy bien! ¿Posee alguna de las Obras Sociales con las que trabaja el profesional? En caso de tenerla, por favor indíqueme a continuación cuál de ellas es.`);
                 } else {
@@ -403,7 +403,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
                 updateValues(range, values);
 
                 values = [
-                    [`${agent.parameters.dni}`, agent.parameters['last-name'] + " " + agent.parameters['given-name'], `${agent.parameters['phone-number']}`, agent.parameters.email, agent.parameters.ObraSocial]
+                    [`${agent.parameters.dni}`, `${agent.parameters['last-name']} ${agent.parameters['given-name']}`, `${agent.parameters['phone-number']}`, agent.parameters.email, agent.parameters.ObraSocial, agent.parameters.afiliado]
                 ];
 
                 range = "Pacientes";

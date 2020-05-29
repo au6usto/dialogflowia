@@ -139,7 +139,7 @@ class GoogleSheetsController extends Controller
         $medico = $this->getSheetsData(self::MEDICOS_SHEET)
             ->firstWhere('ApellidoNombre', $apellido);
         $turno = $this->getSheetsData(self::TURNOS_SHEET)
-                ->where('IdTurno', $numero)
+                ->where('IdTurno', $idTurno)
                 ->where('Estado', 'Disponible')
                 ->where('Fecha', $fechaFormateada)
                 ->where('MatriculaProfesional', $medico['MatriculaProfesional'])
