@@ -135,7 +135,7 @@ class GoogleSheetsController extends Controller
 
     public function isTurnoMedicoFecha($idTurno, $apellido, $fecha)
     {
-        $fechaFormateada = Carbon::parse($fecha);
+        $fechaFormateada = Carbon::parse($fecha)->format('Y-m-d');
         $medico = $this->getSheetsData(self::MEDICOS_SHEET)
             ->firstWhere('ApellidoNombre', $apellido);
         $turno = $this->getSheetsData(self::TURNOS_SHEET)
