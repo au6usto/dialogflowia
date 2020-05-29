@@ -57,24 +57,24 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
         if (update) {
             sheets.spreadsheets.values.update(sendObject, function (err, res) {
                 if (err) {
-                  console.log(err);
-                  return res.status(400).send({
-                    message: errorHandler.getErrorMessage(err)
-                });
-              }
-              console.log(res);
-          });
+                    console.log(err);
+                    return res.status(400).send({
+                        message: errorHandler.getErrorMessage(err)
+                    });
+                }
+                console.log(res);
+            });
         } else {
             sendObject.insertDataOption = "INSERT_ROWS";
             sheets.spreadsheets.values.append(sendObject, function (err, res) {
                 if (err) {
-                  console.log(err);
-                  return res.status(400).send({
-                    message: errorHandler.getErrorMessage(err)
-                });
-              }
-              console.log(res);
-          });
+                    console.log(err);
+                    return res.status(400).send({
+                        message: errorHandler.getErrorMessage(err)
+                    });
+                }
+                console.log(res);
+            });
         }
     }
 
@@ -117,7 +117,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
                             agent.add(new Suggestion(especialidad.Especialidad));
                         });
                         agent.add(`¿Desea consultar algunas de ellas? De ser así, por favor especifique cuál de ellas`);
-                        agent.setContext({'name': 'UsuarioSolicitaTurno', 'lifespan': 1, 'parameters': {'especialidad': agent.parameters.especialidad}})
+                        agent.setContext({ 'name': 'UsuarioSolicitaTurno', 'lifespan': 1, 'parameters': { 'especialidad': agent.parameters.especialidad } })
                     }
                 } else {
                     agent.add(`No se encontró ningún médico disponible para la especialidad elegida`);
@@ -137,7 +137,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
                     res.data.data.map(medico => {
                         agent.add(getMedicoInfo(medico));
                     });
-                    agent.add(`Por favor elija un Médico`);
+                    agent.add(`A continuación, indique el nombre y/o apellido del profesional al que desea consultar`);
                 } else {
                     agent.add(`No se encontró ningún médico disponible para la especialidad elegida`);
                 }
@@ -150,41 +150,63 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     function listadoCompletoIndicaProfesional(agent) {
         //Si tiene fecha y profesional
         if (isSet(agent.parameters.profesional)) {
-         return getSpreadSheetData(`Medicos/Apellido/${agent.parameters.profesional}`).then( res => {
-            if (typeof res.data.data.MatriculaProfesional !== "undefined" && res.data.data.MatriculaProfesional > 0) {
-              agent.add(`El médico elegido es:`);
-              agent.add(getMedicoInfo(res.data.data));
-              agent.setContext({
-                  'name': 'UsuarioEligioProfesional',
-                  'lifespan': 1,
-                  'parameters': {
-                      'MatriculaProfesional' : res.data.data.MatriculaProfesional
-                  }
-              });
-              agent.add(`Ok. A continuación, indique el día a consultar que le resultara más conveniente.`);
-          } else {
-              agent.add(`Eligió un médico incorrecto`);
-          }
-      });
-     } else {
-        agent.add(`Lo siento, tiene que elegir un profesional`);
+            return getSpreadSheetData(`Medicos/Apellido/${agent.parameters.profesional}`).then(res => {
+                if (isSet(res.data.data.MatriculaProfesional)) {
+                    agent.add(`Los datos del profesional son los siguientes:`);
+                    agent.add(getMedicoInfo(res.data.data));
+                    agent.add(`A continuación, por favor indíqueme el día a consultar que le resultará más conveniente`);
+                    agent.setContext({
+                        'name': 'UsuarioEligioProfesional',
+                        'lifespan': 1,
+                        'parameters': {
+                            'MatriculaProfesional': res.data.data.MatriculaProfesional
+                        }
+                    });
+                } else {
+                    agent.add(`Disculpe, no he comprendido a qué profesional se refiere. Asegúrese de indicar correctamente el nombre y/o apellido del profesional al que desea consultar`);
+                    agent.setContext({
+                        'name': 'UsuarioIngresaEspecialidad-ListadoCompleto-followup',
+                        'lifespan': 1,
+                        'parameters': {
+                            'profesional': agent.parameters.profesional
+                        }
+                    });
+                }
+            });
+        } else {
+            agent.add(`Disculpe, no he comprendido a qué profesional se refiere. Asegúrese de indicar correctamente el nombre y/o apellido del profesional al que desea consultar`);
+            agent.setContext({
+                'name': 'UsuarioIngresaEspecialidad-ListadoCompleto-followup',
+                'lifespan': 1,
+                'parameters': {
+                    'profesional': agent.parameters.profesional
+                }
+            });
+        }
     }
-}
 
-function filtraFechaIndicaProfesional(agent) {
+    function filtraFechaIndicaProfesional(agent) {
         //Si tiene fecha y profesional
         if (isSet(agent.parameters.date) && isSet(agent.parameters.profesional)) {
-            return getSpreadSheetData(`Turnos/Apellido/${agent.parameters.profesional}/Fecha/${agent.parameters.date}`).then( res => {
-               if (lengthOverZero(res.data.data)) {
-                 agent.add(`Los turnos disponibles son:`);
-                 res.data.data.map(turno => {
-                    agent.add(`${turno.IdTurno} - ${turno.Fecha} | ${turno.HoraInicio}`);
-                });
-                 agent.add(`Indique el número de turno que desea elegir`);
-             } else {
-                 agent.add(`Eligió un médico incorrecto`);
-             }
-         });
+            return getSpreadSheetData(`Turnos/Apellido/${agent.parameters.profesional}/Fecha/${agent.parameters.date}`).then(res => {
+                if (lengthOverZero(res.data.data)) {
+                    agent.add(`Los turnos disponibles son:`);
+                    res.data.data.map(turno => {
+                        agent.add(`${turno.IdTurno} - ${turno.Fecha} | ${turno.HoraInicio}`);
+                    });
+                    agent.add(`Indique el número del turno que desea solicitar`);
+                } else {
+                    agent.add(`Disculpe, no he comprendido a qué profesional se refiere. Asegúrese de indicar correctamente el nombre y/o apellido del profesional al que desea consultar`);
+                    agent.setContext({
+                        'name': 'UsuarioIngresaEspecialidad-FiltraFecha-followup',
+                        'lifespan': 1,
+                        'parameters': {
+                            'profesional': agent.parameters.profesional,
+                            'date': agent.parameters.date,
+                        }
+                    });
+                }
+            });
         } else {
             agent.add(`Lo siento, tiene que elegir un profesional`);
         }
@@ -193,31 +215,31 @@ function filtraFechaIndicaProfesional(agent) {
     function usuarioEligeFecha(agent) {
         //Si tiene fecha y profesional
         if (isSet(agent.parameters.date) && isSet(agent.parameters.profesional)) {
-            return getSpreadSheetData(`Turnos/Apellido/${agent.parameters.profesional}/Fecha/${agent.parameters.date}`).then( res => {
-               if (lengthOverZero(res.data.data)) {
-                 agent.add(`Los turnos disponibles son:`);
-                 res.data.data.map(turno => {
-                    agent.add(`${turno.IdTurno} | ${turno.Fecha} | ${turno.HoraInicio}`);
-                });
-                 agent.add(`¿Desea solicitar alguno de los turnos previamente mencionados?`);
-             } else {
-                if (isSet(agent.parameters.profesional)) {
-                    return getSpreadSheetData(`Medicos/Apellido/${agent.parameters.profesional}`).then(res => {
-                        if (isSet(res.data.success) && res.data.success) {
-                            let medico = res.data.data;
-                            agent.add(`El profesional elegido no atiende en la fecha especificada. Recuerde que sus horarios de atención son:`);
-                            agent.add(getMedicoInfo(medico));
-                            agent.add(`Por favor, indique a continuación una fecha válida`);
-                            agent.setContext({ 'name': 'UsuarioEligioProfesional', 'parameters': { 'MatriculaProfesional' : medico.MatriculaProfesional } });
-                        } else {
-                            agent.add(`No se encontró ningún médico disponible con el Apellido elegido.`);
-                        }
-                });
+            return getSpreadSheetData(`Turnos/Apellido/${agent.parameters.profesional}/Fecha/${agent.parameters.date}`).then(res => {
+                if (lengthOverZero(res.data.data)) {
+                    agent.add(`Los turnos disponibles son:`);
+                    res.data.data.map(turno => {
+                        agent.add(`${turno.IdTurno} | ${turno.Fecha} | ${turno.HoraInicio}`);
+                    });
+                    agent.add(`¿Desea solicitar alguno de los turnos previamente mencionados?`);
                 } else {
-                    agent.add(`Lo siento, tiene que elegir un profesional`);
+                    if (isSet(agent.parameters.profesional)) {
+                        return getSpreadSheetData(`Medicos/Apellido/${agent.parameters.profesional}`).then(res => {
+                            if (isSet(res.data.success) && res.data.success) {
+                                let medico = res.data.data;
+                                agent.add(`El profesional elegido no atiende en la fecha especificada. Recuerde que sus horarios de atención son:`);
+                                agent.add(getMedicoInfo(medico));
+                                agent.add(`Por favor, indique a continuación una fecha válida`);
+                                agent.setContext({ 'name': 'UsuarioEligioProfesional', 'parameters': { 'MatriculaProfesional': medico.MatriculaProfesional } });
+                            } else {
+                                agent.add(`No se encontró ningún médico disponible con el Apellido elegido.`);
+                            }
+                        });
+                    } else {
+                        agent.add(`Lo siento, tiene que elegir un profesional`);
+                    }
                 }
-            }
-        });
+            });
         } else {
             agent.add(`Lo siento, tiene que elegir un profesional`);
         }
@@ -226,15 +248,23 @@ function filtraFechaIndicaProfesional(agent) {
     function filtraObraSocialIndicaProfesional(agent) {
         //Si tiene Obra Social y Especialidad
         if (isSet(agent.parameters.ObraSocial) && isSet(agent.parameters.profesional)) {
-            return getSpreadSheetData(`Medico/${agent.parameters.profesional}/ObraSocial/${agent.parameters.ObraSocial}`).then( res => {
-               if (res.data.success) {
-                 agent.add(`Los datos de médico son:`);
-                 agent.add(getMedicoInfo(res.data.data));
-                 agent.add(`Elija el día que desea consultar`);
-             } else {
-                 agent.add(`Eligió un médico incorrecto`);
-             }
-         });
+            return getSpreadSheetData(`Medico/${agent.parameters.profesional}/ObraSocial/${agent.parameters.ObraSocial}`).then(res => {
+                if (res.data.success) {
+                    agent.add(`Los datos del profesional son los siguientes:`);
+                    agent.add(getMedicoInfo(res.data.data));
+                    agent.add(`A continuación, por favor indíqueme el día a consultar que le resultará más conveniente.`);
+                } else {
+                    agent.add(`Disculpe, no he comprendido a qué profesional se refiere. Asegúrese de indicar correctamente el nombre y/o apellido del profesional al que desea consultar`);
+                    agent.setContext({
+                        'name': 'UsuarioIngresaEspecialidad-FiltraObraSocial-followup',
+                        'lifespan': 1,
+                        'parameters': {
+                            'profesional': agent.parameters.profesional,
+                            'ObraSocial': agent.parameters.ObraSocial,
+                        }
+                    });
+                }
+            });
         } else {
             agent.add(`Lo siento, tiene que elegir un Profesional y una Obra Social`);
         }
@@ -261,11 +291,11 @@ function filtraFechaIndicaProfesional(agent) {
             agent.add(`Buscando médicos con Obra Social ${agent.parameters.ObraSocial}`);
             return getSpreadSheetData(`Medicos/ObraSocial/${agent.parameters.ObraSocial}/Especialidad/${agent.parameters.especialidad}`).then(res => {
                 if (lengthOverZero(res.data.data)) {
-                    agent.add(`Los médicos disponibles para la Obra Social ${agent.parameters.ObraSocial} con Especialidad ${agent.parameters.especialidad} son:`);
+                    agent.add(`Los profesionales de la especialidad ${agent.parameters.especialidad} que trabajan con la Obra Social ${agent.parameters.ObraSocial} son:`);
                     res.data.data.map(medico => {
                         agent.add(getMedicoInfo(medico));
                     });
-                    agent.add(`Por favor elija un Médico`);
+                    agent.add(`A continuación, indique el nombre y/o apellido del profesional al que desea consultar.`);
                 } else {
                     agent.add(`No se encontró ningún médico disponible para la Obra Social elegida`);
                 }
@@ -308,13 +338,13 @@ function filtraFechaIndicaProfesional(agent) {
         if (isSet(agent.parameters.especialidad) && isSet(agent.parameters.date)) {
             return getSpreadSheetData(`Medicos/Fecha/${agent.parameters.date}/Especialidad/${agent.parameters.especialidad}`).then(res => {
                 if (lengthOverZero(res.data.data)) {
-                    agent.add(`Los médicos disponibles para la Fecha ${agent.parameters.date} y la Especialidad  ${agent.parameters.especialidad} son: `);
+                    agent.add(`Los profesionales de la especialidad  ${agent.parameters.especialidad} disponibles en dicha fecha son: `);
                     res.data.data.map(medico => {
                         agent.add(getMedicoInfo(medico));
                     });
-                    agent.add(`Por favor elija un profesional`);
+                    agent.add(`A continuación, indique el nombre y/o apellido del profesional al que desea consultar.`);
                 } else {
-                    agent.add(`No se encontró ningún médico disponible para la Fecha y Especialidad elegidas.`);
+                    agent.add(`No se encontró ningún médico disponible para la Fecha y Especialidad elegidas. ¿Puedo ayudarlo en algo más?`);
                 }
             });
         } else {
@@ -323,40 +353,40 @@ function filtraFechaIndicaProfesional(agent) {
     }
 
     function usuarioIndicaDNI(agent) {
-        // if (isSet(agent.parameters.ObraSocial) && agent.parameters.ObraSocial === "No Tiene") {
-        //     agent.add(`He detectado que es su primera vez en la institución.`);
-        //     agent.add(`Para poder completar el registro del turno será necesario registrarlo como paciente.`);
-        //     agent.add(`Para ello, ingrese a continuación los siguientes datos personales:`);
-        //     agent.add(`- Nombre y Apellido completo`);
-        //     agent.add(`- teléfono`);
-        //     agent.add(`- correo electrónico (opcional).`);
-        // }
         return getSpreadSheetData(`Paciente/` + agent.parameters.dni).then(res => {
             if (res.data.success) {
                 return getSpreadSheetData(`Paciente/${agent.parameters.dni}/Turno/${agent.parameters.turno}`).then(res => {
-                   if (res.data.success) {
-                    let registro = res.data.data;
-                    let values = [
-                    ["Ocupado", agent.parameters.dni]
-                    ];
-                    let range = `TurnosMedicos!H${registro.Fila}:G${registro.Fila}`;
-                    updateValues(range, values);
-                    agent.add(`¡Perfecto ${registro.Paciente}!`);
-                    agent.add(`Su turno ha sido registrado con éxito. Recomiendo anotar la siguiente información para recordarlo el día de la consulta.`);
-                    agent.add(`Fecha: ${registro.Fecha}`);
-                    agent.add(`Hora: ${registro.HoraInicio}`);
-                    agent.add(`Dr/a ${registro.ApellidoNombre}`);
-                    agent.add(`Lugar: ${registro.Direccion}`);
-                    agent.add(`Piso: ${registro.Piso}`);
-                    agent.add(`Consultorio: ${registro.Consultorio}`);
-                    agent.add(`Turno: ${registro.IdTurno}`);
-                    agent.add(`¿Puedo ayudarte en algo más?`);
-                } else {
-                    agent.add(`No se pudo asignar el Turno en este momento. Intente nuevamente`);
-                }
-            });
+                    if (res.data.success) {
+                        let registro = res.data.data;
+                        let values = [
+                            ["Ocupado", agent.parameters.dni]
+                        ];
+                        let range = `TurnosMedicos!H${registro.Fila}:G${registro.Fila}`;
+                        updateValues(range, values);
+                        agent.add(`¡Perfecto ${registro.Paciente}!`);
+                        agent.add(`Su turno ha sido registrado con éxito. Recomiendo anotar la siguiente información para recordarlo el día de la consulta.`);
+                        agent.add(`Fecha: ${registro.Fecha}`);
+                        agent.add(`Hora: ${registro.HoraInicio}`);
+                        agent.add(`Dr/a ${registro.ApellidoNombre}`);
+                        agent.add(`Lugar: ${registro.Direccion}`);
+                        agent.add(`Piso: ${registro.Piso}`);
+                        agent.add(`Consultorio: ${registro.Consultorio}`);
+                        agent.add(`Turno: ${registro.IdTurno}`);
+                        agent.add(`¿Puedo ayudarte en algo más?`);
+                    } else {
+                        agent.add(`No se pudo asignar el Turno en este momento. Intente nuevamente`);
+                    }
+                });
             } else {
-                agent.add(`He detectado que es su primera vez en la institución. Para poder completar el registro será necesario registrarlo como paciente. Para ello, ingrese los siguietenes datos: Nombre y Apellido completo, teléfono, correo electrónico(opcional)`);
+                agent.add(`He detectado que es su primera vez en la institución.`);
+                agent.add(`Para poder completar el registro del turno será necesario registrarlo como paciente.`);
+                agent.add(`Para ello, ingrese a continuación los siguientes datos personales:`);
+                agent.add(`- Nombre y Apellido completo`);
+                agent.add(`- teléfono`);
+                agent.add(`- correo electrónico (opcional).`);
+                if (isSet(agent.parameters.ObraSocial) && agent.parameters.ObraSocial !== "No Tiene") {
+                    agent.add(`- Número de afiliado de Obra Social.`);
+                }
             }
         });
     }
@@ -367,13 +397,13 @@ function filtraFechaIndicaProfesional(agent) {
                 let registro = res.data.data;
                 let fila = registro.Fila;
                 let values = [
-                ["Ocupado", `${agent.parameters.dni}`]
+                    ["Ocupado", `${agent.parameters.dni}`]
                 ];
                 let range = `TurnosMedicos!H${fila}:G${fila}`;
                 updateValues(range, values);
 
                 values = [
-                [`${agent.parameters.dni}`, agent.parameters['last-name'] + " " + agent.parameters['given-name'], `${agent.parameters['phone-number']}`, agent.parameters.email, agent.parameters.ObraSocial]
+                    [`${agent.parameters.dni}`, agent.parameters['last-name'] + " " + agent.parameters['given-name'], `${agent.parameters['phone-number']}`, agent.parameters.email, agent.parameters.ObraSocial]
                 ];
 
                 range = "Pacientes";
@@ -397,17 +427,17 @@ function filtraFechaIndicaProfesional(agent) {
     function turnosDePacienteCancelacion(agent) {
         //Si tiene fecha y profesional
         if (isSet(agent.parameters.dni)) {
-            return getSpreadSheetData(`Paciente/${agent.parameters.dni}/Turnos`).then( res => {
+            return getSpreadSheetData(`Paciente/${agent.parameters.dni}/Turnos`).then(res => {
                 if (lengthOverZero(res.data.data)) {
-                  agent.add(`Los turnos registrados hasta el momento son:`);
-                  res.data.data.map(turno => {
-                     agent.add(`${turno.IdTurno} - ${turno.Fecha} | ${turno.HoraInicio} - ${turno.ApellidoNombre} - ${turno.Especialidad} - ${turno.Sede}`);
-                 });
-                  agent.add(`Indique el número de turno que desea cancelar`);
-              } else {
-                  agent.add(`No posee turnos a cancelar ¿Puedo ayudarte en algo más?`);
-              }
-          });
+                    agent.add(`Los turnos registrados hasta el momento son:`);
+                    res.data.data.map(turno => {
+                        agent.add(`${turno.IdTurno} - ${turno.Fecha} | ${turno.HoraInicio} - ${turno.ApellidoNombre} - ${turno.Especialidad} - ${turno.Sede}`);
+                    });
+                    agent.add(`Indique el número de turno que desea cancelar`);
+                } else {
+                    agent.add(`No posee turnos a cancelar ¿Puedo ayudarte en algo más?`);
+                }
+            });
         } else {
             agent.add(`Lo siento, tiene que ingresar un DNI`);
         }
@@ -416,17 +446,17 @@ function filtraFechaIndicaProfesional(agent) {
     function turnosDePacienteConsulta(agent) {
         //Si tiene fecha y profesional
         if (isSet(agent.parameters.dni)) {
-            return getSpreadSheetData(`Paciente/${agent.parameters.dni}/Turnos`).then( res => {
+            return getSpreadSheetData(`Paciente/${agent.parameters.dni}/Turnos`).then(res => {
                 if (lengthOverZero(res.data.data)) {
-                  agent.add(`Los turnos registrados hasta el momento son:`);
-                  res.data.data.map(turno => {
-                     agent.add(`${turno.IdTurno} - ${turno.Fecha} | ${turno.HoraInicio} - ${turno.ApellidoNombre} - ${turno.Especialidad} - ${turno.Sede}`);
-                 });
-                  agent.add(`¿Puedo ayudarte en algo más?`);
-              } else {
-                  agent.add(`No posee turnos ¿Puedo ayudarte en algo más?`);
-              }
-          });
+                    agent.add(`Los turnos registrados hasta el momento son:`);
+                    res.data.data.map(turno => {
+                        agent.add(`${turno.IdTurno} - ${turno.Fecha} | ${turno.HoraInicio} - ${turno.ApellidoNombre} - ${turno.Especialidad} - ${turno.Sede}`);
+                    });
+                    agent.add(`¿Puedo ayudarte en algo más?`);
+                } else {
+                    agent.add(`No posee turnos ¿Puedo ayudarte en algo más?`);
+                }
+            });
         } else {
             agent.add(`Lo siento, tiene que ingresar un DNI`);
         }
@@ -437,7 +467,7 @@ function filtraFechaIndicaProfesional(agent) {
             if (isSet(res.data.data.Fila)) {
                 let fila = res.data.data.Fila;
                 let values = [
-                ["Disponible", ""]
+                    ["Disponible", ""]
                 ];
                 let range = `TurnosMedicos!H${fila}:G${fila}`;
                 updateValues(range, values);
