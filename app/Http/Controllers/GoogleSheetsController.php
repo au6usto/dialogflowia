@@ -36,7 +36,10 @@ class GoogleSheetsController extends Controller
 
     public function getSpreadSheet($sheetId)
     {
-        return $this->getSheetsData($sheetId);
+        $sheet = $this->getSheetsData($sheetId);
+        return isset($sheet) ?
+        $this->sendResponse($sheet, 'Paciente') :
+        $this->sendError('No se pudo encontrar el Paciente');
     }
 
     public function getPaciente($DNI)

@@ -103,7 +103,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
 
     function usuarioIngresaEspecialidad(agent) {
         if (isSet(agent.parameters.especialidad)) {
-            return getSpreadSheetData(`sheets/Especialidad`).then(res => {
+            return getSpreadSheetData(`sheet/Especialidades`).then(res => {
                 if (lengthOverZero(res.data.data)) {
                     if (res.data.data.includes(agent.parameters.esecialidad)) {
                         agent.add(`Muy bien. Por favor, indique a continuación uno de los siguientes parámetros de búsqueda:`);
