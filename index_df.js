@@ -18,7 +18,7 @@ process.env.DEBUG = 'dialogflow:*'; // It enables lib debugging statements
 const serviceAccount = {};
 
 const spreadsheetId = "1xaORRQBAxi4Mly_9yccQvgc2KBVpdMWAJTRBkcXRrMI";
-
+const especialidadesMayo = ['Clinico', 'Nutricion', 'Psicologia', 'Urologia'];
 
 // Set up Google Calendar service account credentials
 const serviceAccountAuth = new google.auth.JWT({
@@ -103,33 +103,21 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
 
     function usuarioIngresaEspecialidad(agent) {
         if (isSet(agent.parameters.especialidad)) {
-            return getSpreadSheetData(`sheet/Especialidades`).then(res => {
-                if (lengthOverZero(res.data.data)) {
-                    let especialidadExiste = false;
-                    for (let i = 0; i < res.data.data.length; i++) {
-                        if (res.data.data[i].Especialidad === agent.parameters.esecialidad) {
-                            especialidadExiste = true;
-                            break;
-                        }
-                    }
-                    if (especialidadExiste) {
-                        agent.add(`Muy bien. Por favor, indique a continuación uno de los siguientes parámetros de búsqueda:`);
-                        agent.add(`- nombre y/o apellido del especialista al que desea consultar`);
-                        agent.add(`- fecha especifica para visualizar los especialistas que poseen turnos disponibles en la misma`);
-                        agent.add(`- obra social que posee para visualizar los especialistas que trabajan con ella`);
-                        agent.add(`- solicitar consultar el listado completo de especialistas que trabajan en la misma.`);
-                    } else {
-                        agent.add(`Lo siento. Recuerde que las especialidades que brindamos en esta institución son:`);
-                        res.data.data.map(especialidad => {
-                            agent.add(new Suggestion(especialidad.Especialidad));
-                        });
-                        agent.add(`¿Desea consultar algunas de ellas? De ser así, por favor especifique cuál de ellas`);
-                        agent.setContext({ 'name': 'UsuarioSolicitaTurno', 'lifespan': 1, 'parameters': { 'especialidad': agent.parameters.especialidad } })
-                    }
-                } else {
-                    agent.add(`No se encontró ningún médico disponible para la especialidad elegida`);
-                }
-            });
+            if (especialidadesMayo.includes(agent.parameters.especialidad)) {
+                agent.add(`Muy bien. Por favor, indique a continuación uno de los siguientes parámetros de búsqueda:`);
+                agent.add(`- nombre y/o apellido del especialista al que desea consultar`);
+                agent.add(`- fecha especifica para visualizar los especialistas que poseen turnos disponibles en la misma`);
+                agent.add(`- obra social que posee para visualizar los especialistas que trabajan con ella`);
+                agent.add(`- solicitar consultar el listado completo de especialistas que trabajan en la misma.`);
+            } else {
+                agent.add(`Lo siento. Recuerde que las especialidades que brindamos en esta institución son:`);
+                agent.add(new Suggestion(`Clínico`));
+                agent.add(new Suggestion(`Nutrición`));
+                agent.add(new Suggestion(`Psicología`));
+                agent.add(new Suggestion(`Urología`));
+                agent.add(`¿Desea consultar algunas de ellas? De ser así, por favor especifique cuál de ellas`);
+                agent.setContext({ 'name': 'UsuarioSolicitaTurno', 'lifespan': 1, 'parameters': { 'especialidad': agent.parameters.especialidad } })
+            }
         } else {
             agent.add(`Lo siento, tiene que elegir una especialidad`);
         }
@@ -409,10 +397,16 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
                 let range = `TurnosMedicos!H${fila}:G${fila}`;
                 updateValues(range, values);
 
-                values = [
-                    [`${agent.parameters.dni}`, `${agent.parameters['last-name']} ${agent.parameters['given-name']}`, `${agent.parameters['phone-number']}`, agent.parameters.email, agent.parameters.ObraSocial, agent.parameters.afiliado]
-                ];
-
+                if (isSet(agent.parameters.afiliado)) {
+                    values = [
+                        [`${agent.parameters.dni}`, `${agent.parameters['last-name']} ${agent.parameters['given-name']}`, `${agent.parameters['phone-number']}`, agent.parameters.email, agent.parameters.ObraSocial, agent.parameters.afiliado, agent.parameters.afiliado]
+                    ];
+                } else {
+                    values = [
+                        [`${agent.parameters.dni}`, `${agent.parameters['last-name']} ${agent.parameters['given-name']}`, `${agent.parameters['phone-number']}`, agent.parameters.email, agent.parameters.ObraSocial, agent.parameters.afiliado]
+                    ];
+                }
+                
                 range = "Pacientes";
                 updateValues(range, values, false);
                 agent.add(`¡Perfecto ${agent.parameters['last-name']} ${agent.parameters['given-name']} !`);
