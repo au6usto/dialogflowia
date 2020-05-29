@@ -392,21 +392,15 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
                 let registro = res.data.data;
                 let fila = registro.Fila;
                 let values = [
-                    ["Ocupado", `${agent.parameters.dni}`]
+                      ["Ocupado", `${agent.parameters.dni}`]
                 ];
                 let range = `TurnosMedicos!H${fila}:G${fila}`;
                 updateValues(range, values);
-
-                if (isSet(agent.parameters.afiliado)) {
-                    values = [
-                        [`${agent.parameters.dni}`, `${agent.parameters['last-name']} ${agent.parameters['given-name']}`, `${agent.parameters['phone-number']}`, agent.parameters.email, agent.parameters.ObraSocial, agent.parameters.afiliado, agent.parameters.afiliado]
-                    ];
-                } else {
-                    values = [
-                        [`${agent.parameters.dni}`, `${agent.parameters['last-name']} ${agent.parameters['given-name']}`, `${agent.parameters['phone-number']}`, agent.parameters.email, agent.parameters.ObraSocial, agent.parameters.afiliado]
-                    ];
-                }
-                
+        
+                values = [
+                      [`${agent.parameters.dni}`, agent.parameters['last-name'] + " " + agent.parameters['given-name'], `${agent.parameters['phone-number']}`, agent.parameters.email, agent.parameters.ObraSocial]
+                ];
+        
                 range = "Pacientes";
                 updateValues(range, values, false);
                 agent.add(`¡Perfecto ${agent.parameters['last-name']} ${agent.parameters['given-name']} !`);
