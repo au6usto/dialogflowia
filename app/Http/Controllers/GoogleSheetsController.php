@@ -11,11 +11,11 @@ class GoogleSheetsController extends Controller
     const SPREADSHEET_ID = '1xaORRQBAxi4Mly_9yccQvgc2KBVpdMWAJTRBkcXRrMI';
 
     const MEDICOS_SHEET = 'Medicos';
-    
+
     const TURNOS_SHEET = 'TurnosMedicos';
 
     const SEDES_SHEET = 'Sedes';
-    
+
     const PACIENTES_SHEET = 'Pacientes';
 
     const ESPECIALIDADES_SHEET = 'Especialidades';
@@ -51,7 +51,7 @@ class GoogleSheetsController extends Controller
             Cache::add($cacheId, $paciente, 3600);
             return $this->sendResponse($paciente, 'Paciente');
         }
-        
+
         $this->sendError('No se pudo encontrar el Paciente');
     }
 
@@ -133,6 +133,22 @@ class GoogleSheetsController extends Controller
         return $this->sendResponse($turnos->values(), 'Turnos de Médico');
     }
 
+    public function isTurnoMedicoFecha($idTurno, $apellido, $fecha)
+    {
+        $fechaFormateada = Carbon::parse($fecha);
+        $medico = $this->getSheetsData(self::MEDICOS_SHEET)
+            ->firstWhere('ApellidoNombre', $apellido);
+        $turno = $this->getSheetsData(self::TURNOS_SHEET)
+                ->where('IdTurno', $numero)
+                ->where('Estado', 'Disponible')
+                ->where('Fecha', $fechaFormateada)
+                ->where('MatriculaProfesional', $medico['MatriculaProfesional'])
+                ->first();
+        return isset($turno) ?
+        $this->sendResponse($turno, 'Turno Correcto') :
+        $this->sendError('No se pudo encontrar el turno');
+    }
+
     public function isTurno($numero)
     {
         $turno = $this->getSheetsData(self::TURNOS_SHEET)
@@ -212,7 +228,7 @@ class GoogleSheetsController extends Controller
                     return $this->isEqual($item['Especialidad'], $especialidad) && in_array($item['MatriculaProfesional'], $turnos);
                 })
                 ->values();
-        
+
         return $this->sendResponse($medicos, 'Médicos de Especialidad y fecha');
     }
 
@@ -310,7 +326,7 @@ class GoogleSheetsController extends Controller
         }
         return $this->sendError('No se pudo cancelar el turno');
     }
-    
+
     public function getTurnosPaciente($dni)
     {
         $turnos = $this->getSheetsData(self::TURNOS_SHEET)
