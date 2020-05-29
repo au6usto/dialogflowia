@@ -38,7 +38,7 @@ class GoogleSheetsController extends Controller
     {
         $sheet = $this->getSheetsData($sheetId);
         return isset($sheet) ?
-        $this->sendResponse($sheet, 'Paciente') :
+        $this->sendResponse($sheet->values(), 'Paciente') :
         $this->sendError('No se pudo encontrar el Paciente');
     }
 

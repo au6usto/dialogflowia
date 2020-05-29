@@ -105,7 +105,14 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
         if (isSet(agent.parameters.especialidad)) {
             return getSpreadSheetData(`sheet/Especialidades`).then(res => {
                 if (lengthOverZero(res.data.data)) {
-                    if (res.data.data.includes(agent.parameters.esecialidad)) {
+                    let especialidadExiste = false;
+                    for (let i = 0; i < res.data.data.length; i++) {
+                        if (res.data.data[i].Especialidad === agent.parameters.esecialidad) {
+                            especialidadExiste = true;
+                            break;
+                        }
+                    }
+                    if (especialidadExiste) {
                         agent.add(`Muy bien. Por favor, indique a continuación uno de los siguientes parámetros de búsqueda:`);
                         agent.add(`- nombre y/o apellido del especialista al que desea consultar`);
                         agent.add(`- fecha especifica para visualizar los especialistas que poseen turnos disponibles en la misma`);
