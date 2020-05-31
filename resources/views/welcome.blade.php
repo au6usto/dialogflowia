@@ -68,6 +68,7 @@
             <div class="content">
                 <div class="title m-b-md">
                     Turnos para Clínica Mayo con DialogFlow
+                    <a href="https://t.me/turnos_medicos_ia_bot" alt="bot telegram">https://t.me/turnos_medicos_ia_bot</a>
                 </div>
                 <iframe
                     allow="microphone;"
